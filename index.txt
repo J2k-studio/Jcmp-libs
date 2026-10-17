@@ -2,3 +2,4 @@
 # One line for each library:  NAME VERSION URL SHA256
 # NAME is letters, digits and _ only. The library is one J2K source file (NAME.j). SHA256 is the checksum of that file.
 # The libraries that come with the compiler (cpu, net, math ...) are not listed here: they need no install.
+example 1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/example.j abfd04e440dd224b0d681293ef34d26a0c18b610bb412900b6634a88010ed759
