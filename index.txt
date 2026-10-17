@@ -1,0 +1,4 @@
+# The index of libraries for jget (jget -li list | install NAME).
+# One line for each library:  NAME VERSION URL SHA256
+# NAME is letters, digits and _ only. The library is one J2K source file (NAME.j). SHA256 is the checksum of that file.
+# The libraries that come with the compiler (cpu, net, math ...) are not listed here: they need no install.
