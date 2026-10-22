@@ -5,6 +5,7 @@
 canvas 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/canvas.j 9f1c7828fe18c6f24b674c8e23c9fbd38bdf3de1920171c7daa28489d3e2976f
 complex 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/complex.j 1aed66c92dda6438f5a94fc0ec0a97a6c1bce850ff276da9bfeea8415cd9df9c
 example 1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/example.j abfd04e440dd224b0d681293ef34d26a0c18b610bb412900b6634a88010ed759
+neuron 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neuron.j 8e22eef8e3420c7ff97899a78dbbbf110330e273bad8b69a626c7bbe81f29b83
 quat 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/quat.j 206a72aa0c03abe51cf9759d924428508114b80642a4508985fbfc7096808346
 screen 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/screen.j 57a6952d194043692a122a47a59175099e611159afb771ed3371d0b7f7b3ea3c
 simd 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/simd.j 37c192e6f23edc854f9389e73457727f9315c2ec2b37e1598c7b5ba17f8180a4
