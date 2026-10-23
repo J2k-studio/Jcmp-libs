@@ -1,4 +1,4 @@
-// gpu 0.1.0 -- the graphics chip for J2K programs.   #import <gpu>   (needs jcmp 1.1.0.0; license: MPL-2.0)
+// gpu 0.1.1 -- the graphics chip for J2K programs.   #import <gpu>   (needs jcmp 1.1.0.0; license: MPL-2.0)
 //   Gpu g = Gpu::open(320, 180);                  // a picture of 320 x 180 logical pixels, scaled to the screen (in the Jaric app)
 //   if !g.ok() { cout << "no graphics chip here\n"; return; }
 //   g.load(1, "ship.png");                        // a picture file becomes the texture 1
