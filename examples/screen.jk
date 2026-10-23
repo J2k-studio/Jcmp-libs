@@ -1,0 +1,9 @@
+#import <stdlib>
+#import <gfx>
+using gfx::screen;
+void main() {
+    Screen s = Screen::make(8, 4);
+    s.clear(0, 0, 0);
+    s.set(2, 1, 255, 120, 40);
+    cout << s.w << "x" << s.h << " dots, rgb(255,120,40) = " << Screen::rgb(255, 120, 40) << "\n";
+}

@@ -10,3 +10,6 @@
 
 A library that lives in your own repository: give the address of the raw file as the third argument of `tools/add.sh`. The checksum in the index is what `jget` checks, so a file that
 is changed afterwards is refused (the index must be updated by a new pull request).
+
+## Document your library
+Add `examples/NAME.jk` (a short program that runs and prints something) and the descriptions of your functions in the table `D` of `tools/gendocs.py`, then `python3 tools/gendocs.py --jcmp jcmp` writes `docs/NAME.md`. A library without a page of docs is not accepted.

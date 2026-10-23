@@ -87,10 +87,6 @@ struct Gl {
         Native::call1(bind_api, 12448);                              // EGL_OPENGL_ES_API
         int renderable = 4;                                          // EGL_OPENGL_ES2_BIT
         if major >= 3 { renderable = 64; }                           // EGL_OPENGL_ES3_BIT
-        int attr[16];
-        int cfg_attr[24];
-        char^ ca = (char^)@cfg_attr;
-        int idx = 0;
         // EGL_SURFACE_TYPE, PBUFFER; RENDERABLE_TYPE; RGBA 8888; NONE  (32-bit entries)
         int words[16];
         words[0] = 12339; words[1] = 1;
@@ -100,8 +96,6 @@ struct Gl {
         words[8] = 12322; words[9] = 8;
         words[10] = 12321; words[11] = 8;
         words[12] = 12344;
-        int cfg_mem[4];
-        int count_mem[2];
         // the attribute list as 32-bit integers in memory
         int a32 = (int)Mem::alloc(128);
         for i in 0..13 { Native::poke32(a32 + i * 4, words[i]); }

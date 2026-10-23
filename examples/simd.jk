@@ -1,0 +1,14 @@
+#import <stdlib>
+#import <simd>
+void main() {
+    f64x2 a = {1.0, 2.0};
+    f64x2 b = {10.0, 20.0};
+    f64x2 c = a + b * a;                 // both lanes at once: (1 + 10 * 1, 2 + 20 * 2)
+    cout << c.x << " " << c.y << "\n";
+    double data[4];
+    data[0] = 1.0; data[1] = 2.0; data[2] = 3.0; data[3] = 4.0;
+    f64x2 first = f64x2::load(@data, 0);  // two numbers from the array, starting at index 0
+    f64x2 second = f64x2::load(@data, 2);
+    f64x2 sum = first + second;
+    cout << sum.x << " " << sum.y << "\n";
+}

@@ -1,0 +1,11 @@
+#import <stdlib>
+#import <deflate>
+void main() {
+    String text = "";
+    for i in 0..100 { text.append("hello hello hello "); }
+    String gz = Gzip::pack(text);                   // a .gz made in memory (write it with Fs::write_bytes to a file)
+    bool ok = false;
+    String back = Gzip::unpack(gz, @ok);            // ok is false when the data is damaged
+    cout << text.len << " bytes -> " << gz.len << " bytes, back " << ok << " " << (back == text) << "\n";
+    cout << Crc32::of("123456789") << "\n";
+}

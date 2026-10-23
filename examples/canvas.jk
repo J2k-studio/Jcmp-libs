@@ -1,0 +1,9 @@
+#import <stdlib>
+#import <gfx>
+using gfx::canvas;
+void main() {
+    Canvas c = Canvas::make(20, 5);
+    c.clear();
+    c.text(2, 1, "hello");
+    c.show();
+}

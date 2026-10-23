@@ -1,0 +1,15 @@
+#import <stdlib>
+#import <gpu>
+void main() {
+    Gpu g = Gpu::open(320, 180);                    // in the Jaric app; elsewhere g.ok() is false
+    if !g.ok() { cout << "no graphics chip through the app here\n"; return; }
+    while g.running() {
+        g.begin();
+        g.clear(Gpu::rgb(10, 20, 40));
+        g.rect(10, 10, 50, 30, Gpu::rgb(255, 200, 60));
+        g.tri(100, 100, 140, 100, 120, 60, Gpu::rgb(255, 0, 0));
+        g.circle(200, 90, 20, Gpu::rgba(255, 255, 255, 128));
+        g.end();
+    }
+    g.close();
+}

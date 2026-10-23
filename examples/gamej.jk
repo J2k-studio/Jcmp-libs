@@ -1,0 +1,13 @@
+#import <stdlib>
+#import <gamej>
+void main() {
+    Game g = Game::open("example");                 // in a program that is not in a terminal it runs one turn and stops
+    g.begin();
+    g.clear(Game::rgb(10, 20, 40));
+    g.rect(2, 2, 10, 6, Game::rgb(255, 200, 60));
+    g.circle(30, 10, 4, Game::rgb(120, 220, 255));
+    g.text(2, 20, "HELLO", Game::rgb(255, 255, 255));
+    cout << g.get(3, 3) << " " << Game::overlap(0, 0, 5, 5, 4, 4, 5, 5) << "\n";   // the colour of a pixel; do two boxes touch
+    g.end();
+    g.close();
+}

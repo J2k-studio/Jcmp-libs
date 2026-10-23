@@ -1,0 +1,16 @@
+#import <stdlib>
+#import <math>
+#import <neuron>
+void main() {
+    Tensor x = Tensor::zeros(4, 2);                 // 4 examples with 2 numbers each
+    Tensor y = Tensor::zeros(4, 1);                 // the answer for each
+    x.set(1, 1, 1.0); x.set(2, 0, 1.0); x.set(3, 0, 1.0); x.set(3, 1, 1.0);
+    y.set(1, 0, 1.0); y.set(2, 0, 1.0);             // XOR: 0 0 -> 0, 0 1 -> 1, 1 0 -> 1, 1 1 -> 0
+    Network n = Network::make();
+    n.add(2, 8);                                    // a layer: 2 numbers in, 8 neurons
+    n.add(8, 1);
+    double loss = n.fit(x, y, 4000, 0.1);           // learn: 4000 rounds, rate 0.1
+    Tensor out = n.predict(x);
+    cout << (loss < 0.001) << " " << (out.get(1, 0) > 0.5) << " " << (out.get(3, 0) < 0.5) << "\n";
+    n.save("xor.jw");                               // the weights go to a text file; Network::load("xor.jw") reads them back
+}

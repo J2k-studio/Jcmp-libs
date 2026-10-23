@@ -1,0 +1,9 @@
+#import <stdlib>
+#import <math>
+using math::quat;
+using math::vector;
+void main() {
+    quat q = quat::from_axis_angle(vec3::make(0.0, 0.0, 1.0), Math::pi() / 2.0);   // a quarter turn about the z axis
+    vec3 v = q.rotate(vec3::make(1.0, 0.0, 0.0));
+    cout << Math::round(v.x) << " " << Math::round(v.y) << " " << Math::round(v.z) << "\n";
+}
