@@ -1,18 +1,18 @@
+# NAME is letters, digits and _ only. The library is one J2K source file (NAME.j). SHA256 is the checksum of that file.
+# One line for each library:  NAME VERSION URL SHA256
+# The index of libraries for jget (jget -li list | install NAME).
+# The libraries that come with the compiler (cpu, net, math ...) are not listed here: they need no install.
 canvas 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/canvas.j 9f1c7828fe18c6f24b674c8e23c9fbd38bdf3de1920171c7daa28489d3e2976f
 complex 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/complex.j 1aed66c92dda6438f5a94fc0ec0a97a6c1bce850ff276da9bfeea8415cd9df9c
 deflate 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/deflate.j e36fe62b33f07892935d52f120c38174dfa95f866947dcf4390a32acbc6d22ac
 example 1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/example.j abfd04e440dd224b0d681293ef34d26a0c18b610bb412900b6634a88010ed759
 gamej 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gamej.j 62c90d9f1349aba102e74b221a6a5286a40ad06b646988ab21f72f32d04f3393
 gpu 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gpu.j f3a5f782fb8604135815177fb7f3f253fb50eabb2d07b8de6d4c41dc20f3f276
-# NAME is letters, digits and _ only. The library is one J2K source file (NAME.j). SHA256 is the checksum of that file.
 native 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/native.j d5de46ee3f08b3048a44749b21804beb005faa0ae51ed06c58d395906f87e910
 neuron 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neuron.j 8e22eef8e3420c7ff97899a78dbbbf110330e273bad8b69a626c7bbe81f29b83
-# One line for each library:  NAME VERSION URL SHA256
-opengl3 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/opengl3.j 187ab55eb4b3bb3325f12bc916af37e40e3db65619f9833068d8200de5ef11c4
+opengl3 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/opengl3.j 01b0a31e9d8f683abaf13e6aa63ae1afc44d73e3a37c221055a4c2c7265ef04b
 quat 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/quat.j 206a72aa0c03abe51cf9759d924428508114b80642a4508985fbfc7096808346
 screen 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/screen.j 57a6952d194043692a122a47a59175099e611159afb771ed3371d0b7f7b3ea3c
 simd 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/simd.j 37c192e6f23edc854f9389e73457727f9315c2ec2b37e1598c7b5ba17f8180a4
 stats 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/stats.j 4523a719d9b67ab248dab80ced5d0ca34af8587d305aa721414305ed1a6019e0
-# The index of libraries for jget (jget -li list | install NAME).
-# The libraries that come with the compiler (cpu, net, math ...) are not listed here: they need no install.
 vulkan 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/vulkan.j 29ace19adf9c1200c5550943bbc9d821e2256110d815e3928affef18620d8ad4
