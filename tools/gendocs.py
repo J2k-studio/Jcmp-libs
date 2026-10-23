@@ -85,7 +85,7 @@ D = {
  "Gpu.rgb": "an opaque colour 0xFFRRGGBB", "Gpu.rgba": "a colour with an alpha (0 clear, 255 solid)",
  "Gpu.open": "open a picture of w x h logical pixels (scaled to the screen); `ok()` is false when there is no app",
  "Gpu.ok": "true when the graphics chip can be used", "Gpu.running": "true until the game is ended", "Gpu.quit": "end after this turn", "Gpu.set_fps": "turns per second",
- "Gpu.load": "a png / jpeg file becomes the texture `id` (files of the game are found through JEC_ASSETS)",
+ "Gpu.load": "a png / jpeg file becomes the texture `id` (files of the game are found through JC_ASSETS)",
  "Gpu.clear": "clear the picture", "Gpu.tri": "a triangle with one colour", "Gpu.rect": "a rectangle", "Gpu.tri_colors": "a triangle with a colour at each corner (blended)",
  "Gpu.image": "draw a texture in a rectangle; `tint` multiplies the colours (white = as it is)", "Gpu.image_part": "draw a part of a texture (u0 v0 u1 v1 in millionths)",
  "Gpu.line": "a line of a width", "Gpu.circle": "a circle (made of triangles)",
