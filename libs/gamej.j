@@ -419,3 +419,4 @@ struct Game {
         if s.len > 0 { s.append("\e[0m"); cout << s; }
     }
 }
+
