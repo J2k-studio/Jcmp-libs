@@ -6,7 +6,7 @@ canvas 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/
 complex 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/complex.j 1aed66c92dda6438f5a94fc0ec0a97a6c1bce850ff276da9bfeea8415cd9df9c
 deflate 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/deflate.j e36fe62b33f07892935d52f120c38174dfa95f866947dcf4390a32acbc6d22ac
 example 1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/example.j abfd04e440dd224b0d681293ef34d26a0c18b610bb412900b6634a88010ed759
-gamej 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gamej.j 62c90d9f1349aba102e74b221a6a5286a40ad06b646988ab21f72f32d04f3393
+gamej 0.2.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gamej.j 6547a53fa52745d59bc25acb9bbcbd09081a1a015095fb3346d92f4990ec10e1
 gpu 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gpu.j 0abae8f46a97c0b4330f09028a16186dccde438a86e1123c134e35df8d32b936
 native 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/native.j d5de46ee3f08b3048a44749b21804beb005faa0ae51ed06c58d395906f87e910
 neuron 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neuron.j 8e22eef8e3420c7ff97899a78dbbbf110330e273bad8b69a626c7bbe81f29b83
