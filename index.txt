@@ -2,7 +2,7 @@ canvas 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/
 complex 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/complex.j 1aed66c92dda6438f5a94fc0ec0a97a6c1bce850ff276da9bfeea8415cd9df9c
 deflate 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/deflate.j e36fe62b33f07892935d52f120c38174dfa95f866947dcf4390a32acbc6d22ac
 example 1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/example.j abfd04e440dd224b0d681293ef34d26a0c18b610bb412900b6634a88010ed759
-gamej 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gamej.j 3247387488c9ace94cc5cbab619af2f947fc8c5b10cf15f2148d894b15a57200
+gamej 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gamej.j 4ae3cf8f2d98d5f8a203ddc297c76e368611d489a670b237c6c2e6b2df946867
 # NAME is letters, digits and _ only. The library is one J2K source file (NAME.j). SHA256 is the checksum of that file.
 neuron 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neuron.j 8e22eef8e3420c7ff97899a78dbbbf110330e273bad8b69a626c7bbe81f29b83
 # One line for each library:  NAME VERSION URL SHA256

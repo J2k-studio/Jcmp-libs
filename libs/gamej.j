@@ -1,4 +1,4 @@
-// gamej 0.2.0 -- a small game engine for the terminal (and the Jaric app).   #import <gamej>   (needs jcmp 1.1.0.0; license: MPL-2.0)
+// gamej 0.2.0 -- JARIC ENGINE, a small game engine for the terminal and the Jaric app.   #import <gamej>   (needs jcmp 1.1.0.0; license: MPL-2.0)
 //   Game g = Game::open("Pong");                  // the whole terminal is the screen; each text cell is two pixels (half blocks, 24-bit colour)
 //   while g.running() {
 //       g.begin();                                // keys, the time since the last frame (g.dt, seconds)
@@ -419,4 +419,3 @@ struct Game {
         if s.len > 0 { s.append("\e[0m"); cout << s; }
     }
 }
-
