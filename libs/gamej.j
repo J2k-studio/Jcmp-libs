@@ -1,4 +1,4 @@
-// gamej 0.1.0 -- a small game engine for the terminal (and the Jaric app).   #import <gamej>   (needs jcmp 1.1.0.0; license: MPL-2.0)
+// gamej 0.2.0 -- a small game engine for the terminal (and the Jaric app).   #import <gamej>   (needs jcmp 1.1.0.0; license: MPL-2.0)
 //   Game g = Game::open("Pong");                  // the whole terminal is the screen; each text cell is two pixels (half blocks, 24-bit colour)
 //   while g.running() {
 //       g.begin();                                // keys, the time since the last frame (g.dt, seconds)
@@ -12,7 +12,10 @@
 // Pixels: g.w x g.h. Draw: clear pixel rect frame line circle text art. Keys: hit(k) = pressed since the last frame, held(k) = pressed lately
 // (a terminal has no key-up message, so a held key is a key that repeated within 0.18 s; the keys row of the Jaric app gives single presses).
 // Esc and Ctrl-C end the game. GAME_FRAMES=N (environment) runs N frames without a terminal and stops (for tests).
-// Sound in the Jaric app: g.sound("file.mp3"). The screen is only the terminal today; the same calls will draw on a real surface later.
+// Sound in the Jaric app: g.sound("file.mp3").
+// In the Jaric app the game draws on a SURFACE (a picture of g.w x g.h pixels, 160 x 90, drawn by the graphics chip and scaled to the screen) and
+// a touch comes as g.touching() / g.tapped() with g.touch_x, g.touch_y (in pixels). Elsewhere the terminal is the screen. GAMEJ_TERM=1 forces the terminal.
+// The back key of the app ends a game that has a surface.
 
 struct Key {
     static int up() { return 257; }
@@ -69,6 +72,14 @@ struct Game {
     int last_ms;
     int target_ms;
     int limit;                  // GAME_FRAMES
+    bool surf;                  // drawing on the surface of the app
+    int sfd;
+    char^ sbuf;
+    String spath;
+    int touch_x;
+    int touch_y;
+    bool touch_down;
+    bool touch_hit;
     double dt;
     String font;
 
@@ -88,6 +99,25 @@ struct Game {
         if !game_tty { g.cols = 80; g.rows = 24; }
         g.w = g.cols;
         g.h = g.rows * 2;
+        g.surf = false;
+        g.touch_down = false;
+        g.touch_hit = false;
+        g.touch_x = 0;
+        g.touch_y = 0;
+        bool in_app = false;
+        switch Env::get("JARIC") {
+            Option::Some(v): { in_app = true; }
+            Option::None: { }
+        }
+        switch Env::get("GAMEJ_TERM") {
+            Option::Some(v): { in_app = false; }
+            Option::None: { }
+        }
+        if in_app && game_tty {
+            g.surf = true;
+            g.w = 160;
+            g.h = 90;
+        }
         g.px = arr(g.w * g.h + 1);
         g.prev = arr(g.w * g.h + 1);
         for i in 0..g.w * g.h { g.px.push(0); g.prev.push(0 - 1); }
@@ -105,6 +135,29 @@ struct Game {
             game_raw_on();
             cout << "\e[?1049h\e[?25l\e[2J";
         }
+        if g.surf {
+            String tmp = "/data/local/tmp";
+            switch Env::get("TMPDIR") {
+                Option::Some(t): { tmp = t; }
+                Option::None: { }
+            }
+            g.spath = tmp + "/gamej-fb-" + str(Sys::getpid());
+            g.sfd = Sys::open_write(g.spath.c());
+            if g.sfd < 0 {
+                g.surf = false;
+                g.w = g.cols;
+                g.h = g.rows * 2;
+                g.px = arr(g.w * g.h + 1);
+                g.prev = arr(g.w * g.h + 1);
+                for i in 0..g.w * g.h { g.px.push(0); g.prev.push(0 - 1); }
+            }
+            else {
+                g.sbuf = (char^)Mem::alloc(g.w * g.h * 4 + 16);
+                for i in 0..g.w * g.h * 4 { g.sbuf[i] = 0; }
+                Sys::write(g.sfd, g.sbuf, g.w * g.h * 4);
+                cout << "\e]7777;gfx;open;" << g.w << ";" << g.h << ";" << g.spath << "\a";
+            }
+        }
         return g;
     }
 
@@ -118,6 +171,12 @@ struct Game {
     }
 
     void close(self) {
+        if self.surf {
+            cout << "\e]7777;gfx;close\a";
+            Sys::close(self.sfd);
+            Fs::remove(self.spath);
+            self.surf = false;
+        }
         if game_tty {
             cout << "\e[0m\e[?25h\e[?1049l";
             game_raw_off();
@@ -138,6 +197,7 @@ struct Game {
         if self.dt > 0.1 { self.dt = 0.1; }                      // a long pause does not throw things through walls
         self.last_ms = now;
         for i in 0..512 { self.key_hit[i] = 0; }
+        self.touch_hit = false;
         if !game_tty { return; }
         while Input::ready(0) {
             int c = game_byte(0);
@@ -153,10 +213,18 @@ struct Game {
                     else if e == 67 { self.note_key(259, now); }
                     else if e == 68 { self.note_key(260, now); }
                     else { while e >= 48 && e <= 59 { e = game_byte(8); } }
-                } else if d == 93 {                                // a message of the app: skip it up to BEL
+                } else if d == 93 {                                // a message of the app: read it up to BEL
+                    String m = "";
                     int e = game_byte(30);
-                    while e >= 0 && e != 7 && e != 27 { e = game_byte(30); }
+                    while e >= 0 && e != 7 && e != 27 { m.push((char)e); e = game_byte(30); }
                     if e == 27 { game_byte(8); }
+                    String[] pm = m.split(";");
+                    if pm.len >= 5 && pm[0] == "7777" && pm[1] == "touch" {
+                        self.touch_x = pm[3].to_int();
+                        self.touch_y = pm[4].to_int();
+                        if pm[2] == "D" { self.touch_down = true; self.touch_hit = true; }
+                        else if pm[2] == "U" { self.touch_down = false; }
+                    } else if pm.len >= 2 && pm[0] == "7777" && pm[1] == "gfx-closed" { self.alive = false; }
                 }
                 continue;
             }
@@ -165,6 +233,9 @@ struct Game {
         }
     }
 
+    // the finger is on the screen / has just touched it (the surface of the Jaric app)
+    bool touching(self) { return self.touch_down; }
+    bool tapped(self) { return self.touch_hit; }
     bool hit(self, int k) { return k >= 0 && k < 512 && self.key_hit[k] == 1; }
     bool held(self, int k) { return k >= 0 && k < 512 && Time::now_ms() - self.key_at[k] < 180; }
 
@@ -303,6 +374,20 @@ struct Game {
     }
 
     void present(self) {
+        if self.surf {
+            int n = self.w * self.h;
+            for i in 0..n {
+                int c = self.px[i];
+                self.sbuf[i * 4] = (char)(c & 255);
+                self.sbuf[i * 4 + 1] = (char)((c >> 8) & 255);
+                self.sbuf[i * 4 + 2] = (char)((c >> 16) & 255);
+                self.sbuf[i * 4 + 3] = (char)255;
+            }
+            Sys::call(62, self.sfd, 0, 0, 0, 0, 0);               // lseek to the start
+            Sys::write(self.sfd, self.sbuf, n * 4);
+            cout << "\e]7777;gfx;present\a";
+            return;
+        }
         String s = "";
         int lastcol = 0 - 5;
         int lastrow = 0 - 5;
