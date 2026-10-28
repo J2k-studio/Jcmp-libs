@@ -7,8 +7,9 @@ Off-screen drawing with shaders (GLSL), triangles, reading pixels and compute sh
 ## About (the header of the library)
 
 ```
-opengl3 0.1.0 -- OpenGL ES 3.1 (and 2.0) from J2K, on the real driver of the phone: no app is needed.   #import <opengl3>
+opengl3 0.2.0 -- OpenGL ES 3.1 (and 2.0) from J2K, on the real driver of the phone: no app is needed.   #import <opengl3>
 (needs  jcmp -dyn  and the library native; license: MPL-2.0)
+0.2.0: textures (make_texture, make_target_texture), framebuffers (render to a texture), vertex arrays, indices (Ints, draw_elements), instancing, additive blending; native 0.1.1 has call9 (glTexImage2D).
 Gl gl = Gl::open(256, 256, 3, 1);               // an off-screen context (EGL pbuffer): width, height, ES version 3.1 (or 2, 0)
 gl.clear_color(0.1, 0.2, 0.4, 1.0);   gl.clear_color_buffer();
 int prog = gl.program(vertex_source, fragment_source);        // 0 and gl.log when a shader does not compile
@@ -73,6 +74,12 @@ Every function below is used as shown: `Type::name(...)` is a static function, `
 | `Floats::make(int count)` | `Floats` | memory for `count` numbers of 32 bits (what the chip reads) |
 | `x.set(int i, float v)` | `void` | put a number |
 | `x.get(int i)` | `float` | read a number |
+### `Ints`
+
+| call | gives | what it does |
+|---|---|---|
+| `Ints::make(int count)` | `Ints` |  |
+| `x.set(int i, int v)` | `void` |  |
 ### `Gl`
 
 | call | gives | what it does |
@@ -106,5 +113,20 @@ Every function below is used as shown: `Type::name(...)` is a static function, `
 | `x.vertex_attrib(int index, int size, int stride_floats, int offset_floats)` | `void` | how the input variable `index` reads the buffer: size, stride and offset in floats |
 | `x.draw_arrays(int mode, int first, int count)` | `void` | draw (4 = triangles) |
 | `x.draw_triangles(Floats v, int count)` | `void` | send the corners (2 floats each) and draw triangles with the input 0 |
+| `x.gen_texture()` | `int` | ---- textures, targets to draw into, vertex arrays, indices, instances |
+| `x.bind_texture(int unit, int tex)` | `void` | unit 0, 1, 2 ... (the shader reads  uniform sampler2D  with uniform1i(loc, unit)) |
+| `x.texture_params(bool linear, bool repeat)` | `void` |  |
+| `x.make_texture(int w, int h, String rgba, bool linear)` | `int` | a texture from the bytes red, green, blue, alpha of w x h dots (the first row is the bottom row of the texture: v = 0) |
+| `x.make_target_texture(int w, int h, bool linear)` | `int` | an empty texture that can be drawn into (see make_framebuffer) |
+| `x.gen_framebuffer()` | `int` |  |
+| `x.bind_framebuffer(int fbo)` | `void` | 0 is the default framebuffer |
+| `x.make_framebuffer(int tex)` | `int` | a framebuffer whose colour is the texture; 0 when it is not complete |
+| `x.gen_vertex_array()` | `int` |  |
+| `x.bind_vertex_array(int vao)` | `void` |  |
+| `x.buffer_data_ints(int target, Ints data, int usage)` | `void` | indices: the buffer bound to 34963 (element array) before draw_elements |
+| `x.draw_elements(int mode, int count)` | `void` |  |
+| `x.vertex_divisor(int index, int d)` | `void` | an attribute that changes once per instance (d = 1) instead of once per vertex |
+| `x.draw_arrays_instanced(int mode, int first, int count, int instances)` | `void` |  |
+| `x.blend_additive()` | `void` | light adds up (fire, glow, bloom) |
 | `x.read_pixels(int x, int y, int w, int h)` | `String` | the pixels of a rectangle as bytes red, green, blue, alpha; the first row is the bottom |
 | `x.compute(String src, Floats data, int gx, int gy, int gz)` | `Floats` | run a compute shader (GLSL, OpenGL ES 3.1) on the numbers of a Floats in groups gx, gy, gz; gives the changed numbers |
