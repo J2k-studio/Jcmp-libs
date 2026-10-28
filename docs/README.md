@@ -19,4 +19,5 @@ Each page has what the library is, an example that runs (with its output) and th
 | [`<simd>`](simd.md) | vectors of 2 or 4 numbers in one register (NEON) |
 | [`<sprite>`](sprite.md) | sprite |
 | [`<stats>`](stats.md) | numbers about a list of numbers |
+| [`<tilemap>`](tilemap.md) | tilemap |
 | [`<vulkan>`](vulkan.md) | Vulkan on the real driver (first step) |
