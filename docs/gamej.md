@@ -7,7 +7,7 @@ The loop, input, time, 2D drawing, text, pictures made of letters, collision, so
 ## About (the header of the library)
 
 ```
-gamej 0.2.0 -- JARIC ENGINE, a small game engine for the terminal and the Jaric app.   #import <gamej>   (needs jcmp 1.1.0.0; license: MPL-2.0)
+gamej 0.2.1 -- JARIC ENGINE, a small game engine for the terminal and the Jaric app.   #import <gamej>   (needs jcmp 1.1.0.0; license: MPL-2.0)
 Game g = Game::open("Pong");                  // the whole terminal is the screen; each text cell is two pixels (half blocks, 24-bit colour)
 while g.running() {
 g.begin();                                // keys, the time since the last frame (g.dt, seconds)
@@ -93,6 +93,7 @@ Every function below is used as shown: `Type::name(...)` is a static function, `
 | `x.text_scaled(int x, int y, String s, int c, int scale)` | `int` | the same, each dot `scale` pixels big |
 | `x.art(int x, int y, String rows, String legend)` | `void` | a picture made of letters: rows separated by new lines, a legend `<letter>#RRGGBB` repeated; '.' and ' ' are empty |
 | `Game::overlap(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh)` | `bool` | true if two boxes (x, y, width, height) touch |
+| `Game::allowed(String name)` | `bool` | The permissions of a program that jc started (JC_PERMS, with commas): a program started another way has all of them. |
 | `x.sound(String path)` | `void` | play a sound file (the Jaric app) |
 | `x.end()` | `void` | finish the turn: draw the picture (only what changed) and wait for the next turn |
 | `x.present()` | `void` | (internal) draw the picture now |

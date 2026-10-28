@@ -7,7 +7,7 @@ Commands for triangles, rectangles, lines, textures and tints are sent in one ba
 ## About (the header of the library)
 
 ```
-gpu 0.1.0 -- the graphics chip for J2K programs.   #import <gpu>   (needs jcmp 1.1.0.0; license: MPL-2.0)
+gpu 0.1.1 -- the graphics chip for J2K programs.   #import <gpu>   (needs jcmp 1.1.0.0; license: MPL-2.0)
 Gpu g = Gpu::open(320, 180);                  // a picture of 320 x 180 logical pixels, scaled to the screen (in the Jaric app)
 if !g.ok() { cout << "no graphics chip here\n"; return; }
 g.load(1, "ship.png");                        // a picture file becomes the texture 1
@@ -68,7 +68,7 @@ Every function below is used as shown: `Type::name(...)` is a static function, `
 | `x.running()` | `bool` | true until the game is ended |
 | `x.quit()` | `void` | end after this turn |
 | `x.set_fps(int fps)` | `void` | turns per second |
-| `x.load(int id, String file)` | `void` | a png / jpeg file becomes the texture `id` (files of the game are found through JEC_ASSETS) |
+| `x.load(int id, String file)` | `void` | a png / jpeg file becomes the texture `id` (files of the game are found through JC_ASSETS) |
 | `x.clear(int argb)` | `void` | clear the picture |
 | `x.tri(int x0, int y0, int x1, int y1, int x2, int y2, int argb)` | `void` | a triangle with one colour |
 | `x.rect(int x, int y, int rw, int rh, int argb)` | `void` | a rectangle |
