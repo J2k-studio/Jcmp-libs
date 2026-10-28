@@ -99,3 +99,5 @@ Every function below is used as shown: `Type::name(...)` is a static function, `
 | `x.end()` | `void` |  |
 | `x.has_instancing()` | `bool` |  |
 | `x.has_shaders()` | `bool` |  |
+| `x.load(String path)` | `int` | the pictures are loaded by the app: the picture number is the one of g.load(id, file) |
+| `x.image(int pic, double x, double y, double w, double h, int tint)` | `void` |  |

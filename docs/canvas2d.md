@@ -7,7 +7,7 @@ Install: `jc lib install canvas2d`   Use: `#import <canvas2d>`
 ## About (the header of the library)
 
 ```
-canvas2d 0.1.0 -- one interface for drawing 2D, so that a game is written once and runs on every graphics backend.   #import <canvas2d>   (license: MPL-2.0)
+canvas2d 0.2.0 -- one interface for drawing 2D, so that a game is written once and runs on every graphics backend.   #import <canvas2d>   (license: MPL-2.0)
 void draw_scene(Canvas2d^ c) {
 c^.begin();  c^.clear(Color::rgb(10, 20, 40));
 c^.rect(10.0, 10.0, 50.0, 30.0, Color::rgb(255, 200, 60));
@@ -16,6 +16,7 @@ c^.line(0.0, 0.0, 100.0, 100.0, 2.0, Color::rgb(255, 0, 0));
 c^.end();                                           // the frame is drawn here
 }
 The backends (each one is a struct that says  impl Canvas2d ):  GlCanvas (OpenGL ES 3, <glcanvas>), AppCanvas (the commands of the Jaric app, <gpu>).
+Text: canvas_text(c, x, y, "SCORE 10", 2.0, colour) draws with a 3 x 5 font (capitals, digits, signs) in squares of `scale` dots, on any backend.
 Coordinates are dots of the surface: (0, 0) is the top left, y grows downwards. Colours are 0xAARRGGBB (Color::rgb is opaque).
 has_instancing() / has_shaders() tell what the backend can do, so that a game can choose a cheaper way where it cannot.
 ```

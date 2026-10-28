@@ -257,7 +257,8 @@ struct Gpu {
 //   Gpu g = Gpu::open(320, 180);   AppCanvas c; c.init(); c.g = @g;      Canvas2d^ cv = @c;     (begin / end are the loop of the Gpu: g.begin(), g.end())
 struct AppCanvas impl Canvas2d {
     Gpu^ g;
-    void init(self) { }
+    int next_pic;
+    void init(self) { self.next_pic = 1; }
     void begin(self) { }
     void clear(self, int argb) { self.g^.clear(argb); }
     void rect(self, double x, double y, double w, double h, int argb) { self.g^.rect((int)x, (int)y, (int)w, (int)h, argb); }
@@ -267,5 +268,13 @@ struct AppCanvas impl Canvas2d {
     void end(self) { }
     bool has_instancing(self) { return false; }
     bool has_shaders(self) { return false; }
+    // the pictures are loaded by the app: the picture number is the one of g.load(id, file)
+    int load(self, String path) {
+        int id = self.next_pic;
+        self.next_pic += 1;
+        self.g^.load(id, path);
+        return id;
+    }
+    void image(self, int pic, double x, double y, double w, double h, int tint) { self.g^.image(pic, (int)x, (int)y, (int)w, (int)h, tint); }
 }
 
