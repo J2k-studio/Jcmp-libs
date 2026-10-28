@@ -1,6 +1,6 @@
 # `<example>` — example
 
-Install: `jget -li install example`   Use: `#import <example>`
+Install: `jc lib install example`   Use: `#import <example>`
 
 
 

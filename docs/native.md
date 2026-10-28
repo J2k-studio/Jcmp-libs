@@ -1,6 +1,6 @@
 # `<native>` — call the libraries of the system
 
-Install: `jget -li install native`   Use: `#import <native>`   Build the program with `jcmp -dyn`.
+Install: `jc lib install native`   Use: `#import <native>`   Build the program with `jcmp -dyn`.
 
 `dlopen`, `dlsym` and calls of C functions from J2K; the program must be built with `jcmp -dyn`.
 

@@ -1,13 +1,13 @@
 # `<gamej>` — Jaric Engine: a small game engine
 
-Install: `jget -li install gamej`   Use: `#import <gamej>`
+Install: `jc lib install gamej`   Use: `#import <gamej>`
 
 The loop, input, time, 2D drawing, text, pictures made of letters, collision, sound and touch; in a terminal or on a surface in the Jaric app.
 
 ## About (the header of the library)
 
 ```
-gamej 0.2.1 -- JARIC ENGINE, a small game engine for the terminal and the Jaric app.   #import <gamej>   (needs jcmp 1.1.0.0; license: MPL-2.0)
+gamej 0.2.2 -- JARIC ENGINE, a small game engine for the terminal and the Jaric app.   #import <gamej>   (needs jcmp 1.1.0.0; license: MPL-2.0)
 Game g = Game::open("Pong");                  // the whole terminal is the screen; each text cell is two pixels (half blocks, 24-bit colour)
 while g.running() {
 g.begin();                                // keys, the time since the last frame (g.dt, seconds)

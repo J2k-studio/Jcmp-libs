@@ -1,6 +1,6 @@
 # `<deflate>` — CRC-32, DEFLATE and gzip
 
-Install: `jget -li install deflate`   Use: `#import <deflate>`
+Install: `jc lib install deflate`   Use: `#import <deflate>`
 
 Compress and decompress data in memory, make and open `.gz` data.
 

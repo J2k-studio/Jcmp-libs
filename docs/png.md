@@ -1,6 +1,6 @@
 # `<png>` — png
 
-Install: `jget -li install png`   Use: `#import <png>`
+Install: `jc lib install png`   Use: `#import <png>`
 
 
 

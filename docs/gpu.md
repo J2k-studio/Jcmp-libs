@@ -1,6 +1,6 @@
 # `<gpu>` — the graphics chip through the Jaric app
 
-Install: `jget -li install gpu`   Use: `#import <gpu>`
+Install: `jc lib install gpu`   Use: `#import <gpu>`
 
 Commands for triangles, rectangles, lines, textures and tints are sent in one batch per picture; the app draws them with OpenGL ES.
 

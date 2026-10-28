@@ -1,6 +1,6 @@
 # `<stats>` — numbers about a list of numbers
 
-Install: `jget -li install stats`   Use: `#import <stats>`
+Install: `jc lib install stats`   Use: `#import <stats>`
 
 Sum, mean, minimum, maximum, variance, deviation and median of a `double[]`.
 

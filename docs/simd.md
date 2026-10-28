@@ -1,6 +1,6 @@
 # `<simd>` — vectors of 2 or 4 numbers in one register (NEON)
 
-Install: `jget -li install simd`   Use: `#import <simd>`
+Install: `jc lib install simd`   Use: `#import <simd>`
 
 Several numbers are worked on by one instruction. The lanes are named x y z w.
 

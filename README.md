@@ -3,8 +3,8 @@
 The index of libraries for [jget](https://github.com/J2k-studio/jget), the download tool of the [J2K language](https://github.com/J2k-studio/Jcmp).
 
 ```
-jget -li list                  the libraries of this index
-jget -li install example       download, check the SHA-256, put in ~/.j2k/Library
+jc lib list                  the libraries of this index
+jc lib install example       download, check the SHA-256, put in ~/.j2k/Library
 ```
 
 then in your program: `#import <example>`.

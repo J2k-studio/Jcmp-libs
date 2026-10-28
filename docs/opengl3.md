@@ -1,6 +1,6 @@
 # `<opengl3>` — OpenGL ES 3.1 / 2.0 on the real driver
 
-Install: `jget -li install opengl3`   Use: `#import <opengl3>`   Build the program with `jcmp -dyn`.
+Install: `jc lib install opengl3`   Use: `#import <opengl3>`   Build the program with `jcmp -dyn`.
 
 Off-screen drawing with shaders (GLSL), triangles, reading pixels and compute shaders on the graphics chip; build with `jcmp -dyn`.
 

@@ -1,6 +1,6 @@
 # `<screen>` — a picture of colour dots in the terminal
 
-Install: `jget -li install screen`   Use: `#import <screen>`
+Install: `jc lib install screen`   Use: `#import <screen>`
 
 Two dots share one character cell (half blocks), 24-bit colour.
 

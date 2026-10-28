@@ -1,6 +1,6 @@
 # `<quat>` — rotations in 3D (quaternions)
 
-Install: `jget -li install quat`   Use: `#import <quat>`
+Install: `jc lib install quat`   Use: `#import <quat>`
 
 A quaternion turns a vector about an axis without the problems of angles.
 

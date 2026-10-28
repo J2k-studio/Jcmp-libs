@@ -1,6 +1,6 @@
 # `<neuron>` — tensors and small neural networks that train on the phone
 
-Install: `jget -li install neuron`   Use: `#import <neuron>`
+Install: `jc lib install neuron`   Use: `#import <neuron>`
 
 A `Tensor` is a table of numbers; a `Network` is layers of neurons that learn with `fit`, answer with `predict` and keep their weights in a `.jw` text file.
 

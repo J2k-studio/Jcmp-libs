@@ -1,6 +1,6 @@
 # `<sprite>` — sprite
 
-Install: `jget -li install sprite`   Use: `#import <sprite>`
+Install: `jc lib install sprite`   Use: `#import <sprite>`
 
 
 

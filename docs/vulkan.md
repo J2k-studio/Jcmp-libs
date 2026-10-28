@@ -1,6 +1,6 @@
 # `<vulkan>` — Vulkan on the real driver (first step)
 
-Install: `jget -li install vulkan`   Use: `#import <vulkan>`   Build the program with `jcmp -dyn`.
+Install: `jc lib install vulkan`   Use: `#import <vulkan>`   Build the program with `jcmp -dyn`.
 
 An instance and the first chip: name, version, memory and queues; the rest of Vulkan is built with `native`; build with `jcmp -dyn`.
 

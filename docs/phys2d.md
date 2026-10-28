@@ -1,6 +1,6 @@
 # `<phys2d>` — phys2d
 
-Install: `jget -li install phys2d`   Use: `#import <phys2d>`
+Install: `jc lib install phys2d`   Use: `#import <phys2d>`
 
 
 

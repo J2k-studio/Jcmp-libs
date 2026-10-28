@@ -1,6 +1,6 @@
 # `<canvas>` — drawing with characters, with a depth buffer
 
-Install: `jget -li install canvas`   Use: `#import <canvas>`
+Install: `jc lib install canvas`   Use: `#import <canvas>`
 
 A grid of characters; the nearest thing drawn in a place wins.
 

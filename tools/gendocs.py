@@ -193,7 +193,7 @@ for n in names:
     mv = re.search(r"%s (\d+\.\d+\.\d+)" % n, " ".join(src[:2]))
     if mv: version = mv.group(1)
     md = ["# `<%s>` — %s" % (n, title), ""]
-    md.append("Install: `jget -li install %s`   Use: `#import <%s>`%s" % (n, n, ("   Build the program with `jcmp -dyn`." if n in DYN else "")))
+    md.append("Install: `jc lib install %s`   Use: `#import <%s>`%s" % (n, n, ("   Build the program with `jcmp -dyn`." if n in DYN else "")))
     md += ["", about, ""]
     md.append("## About (the header of the library)")
     md += ["", "```", *head, "```", ""]

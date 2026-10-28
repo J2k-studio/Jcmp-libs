@@ -1,6 +1,6 @@
 # `<tilemap>` — tilemap
 
-Install: `jget -li install tilemap`   Use: `#import <tilemap>`
+Install: `jc lib install tilemap`   Use: `#import <tilemap>`
 
 
 

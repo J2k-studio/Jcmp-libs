@@ -1,6 +1,6 @@
 # `<complex>` — complex numbers
 
-Install: `jget -li install complex`   Use: `#import <complex>`
+Install: `jc lib install complex`   Use: `#import <complex>`
 
 A number `re + im i` with the operators `+ - * /` and `abs`.
 
