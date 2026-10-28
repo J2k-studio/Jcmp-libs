@@ -15,5 +15,6 @@ png 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/png.j
 quat 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/quat.j 206a72aa0c03abe51cf9759d924428508114b80642a4508985fbfc7096808346
 screen 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/screen.j 57a6952d194043692a122a47a59175099e611159afb771ed3371d0b7f7b3ea3c
 simd 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/simd.j 37c192e6f23edc854f9389e73457727f9315c2ec2b37e1598c7b5ba17f8180a4
+sprite 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/sprite.j e74c1a13a720cd68cd9a0f34042f5cf6a12e75c0996455c1d0a4b2def293a29f
 stats 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/stats.j 4523a719d9b67ab248dab80ced5d0ca34af8587d305aa721414305ed1a6019e0
 vulkan 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/vulkan.j 29ace19adf9c1200c5550943bbc9d821e2256110d815e3928affef18620d8ad4

@@ -17,5 +17,6 @@ Each page has what the library is, an example that runs (with its output) and th
 | [`<quat>`](quat.md) | rotations in 3D (quaternions) |
 | [`<screen>`](screen.md) | a picture of colour dots in the terminal |
 | [`<simd>`](simd.md) | vectors of 2 or 4 numbers in one register (NEON) |
+| [`<sprite>`](sprite.md) | sprite |
 | [`<stats>`](stats.md) | numbers about a list of numbers |
 | [`<vulkan>`](vulkan.md) | Vulkan on the real driver (first step) |
