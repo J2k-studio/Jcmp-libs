@@ -13,6 +13,7 @@ Each page has what the library is, an example that runs (with its output) and th
 | [`<native>`](native.md) | call the libraries of the system |
 | [`<neuron>`](neuron.md) | tensors and small neural networks that train on the phone |
 | [`<opengl3>`](opengl3.md) | OpenGL ES 3.1 / 2.0 on the real driver |
+| [`<phys2d>`](phys2d.md) | phys2d |
 | [`<png>`](png.md) | png |
 | [`<quat>`](quat.md) | rotations in 3D (quaternions) |
 | [`<screen>`](screen.md) | a picture of colour dots in the terminal |

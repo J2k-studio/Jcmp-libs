@@ -11,6 +11,7 @@ gpu 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gpu.j
 native 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/native.j d5de46ee3f08b3048a44749b21804beb005faa0ae51ed06c58d395906f87e910
 neuron 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neuron.j 8e22eef8e3420c7ff97899a78dbbbf110330e273bad8b69a626c7bbe81f29b83
 opengl3 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/opengl3.j 01b0a31e9d8f683abaf13e6aa63ae1afc44d73e3a37c221055a4c2c7265ef04b
+phys2d 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/phys2d.j aabde720965677fb2d4204e734803fc8c9dec60b4195224855aa441da191b576
 png 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/png.j 62c381b6bcfb63c684fbdb1e4bbcd6572313348c66ec14de3018e84291f4fac1
 quat 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/quat.j 206a72aa0c03abe51cf9759d924428508114b80642a4508985fbfc7096808346
 screen 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/screen.j 57a6952d194043692a122a47a59175099e611159afb771ed3371d0b7f7b3ea3c
