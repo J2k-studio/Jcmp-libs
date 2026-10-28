@@ -25,5 +25,6 @@ Each page has what the library is, an example that runs (with its output) and th
 | [`<sprite>`](sprite.md) | sprite |
 | [`<spritebatch>`](spritebatch.md) | spritebatch |
 | [`<stats>`](stats.md) | numbers about a list of numbers |
+| [`<tasks>`](tasks.md) | tasks |
 | [`<tilemap>`](tilemap.md) | tilemap |
 | [`<vulkan>`](vulkan.md) | Vulkan on the real driver (first step) |

@@ -23,5 +23,6 @@ simd 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/si
 sprite 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/sprite.j e74c1a13a720cd68cd9a0f34042f5cf6a12e75c0996455c1d0a4b2def293a29f
 spritebatch 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/spritebatch.j 44816be4cc61dc3a34bfc549e0965e11dd41327288e06de708a7d0efb99bcc27
 stats 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/stats.j 4523a719d9b67ab248dab80ced5d0ca34af8587d305aa721414305ed1a6019e0
+tasks 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/tasks.j 36f157ba9345f0f831a98e9f607f85814fb32e40ec8d36da07603bf353d9d2c1
 tilemap 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/tilemap.j 7c8f9cb88b34f11cc69f9ce0752a37ff6bcdb8599a2fceb825107cfacf8b46a5
 vulkan 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/vulkan.j 29ace19adf9c1200c5550943bbc9d821e2256110d815e3928affef18620d8ad4
