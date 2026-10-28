@@ -7,7 +7,7 @@ Commands for triangles, rectangles, lines, textures and tints are sent in one ba
 ## About (the header of the library)
 
 ```
-gpu 0.1.1 -- the graphics chip for J2K programs.   #import <gpu>   (needs jcmp 1.1.0.0; license: MPL-2.0)
+gpu 0.2.0 -- the graphics chip for J2K programs.   #import <gpu>   (needs jcmp 1.1.0.0; license: MPL-2.0)
 Gpu g = Gpu::open(320, 180);                  // a picture of 320 x 180 logical pixels, scaled to the screen (in the Jaric app)
 if !g.ok() { cout << "no graphics chip here\n"; return; }
 g.load(1, "ship.png");                        // a picture file becomes the texture 1
@@ -85,3 +85,17 @@ Every function below is used as shown: `Type::name(...)` is a static function, `
 | `x.begin()` | `void` | start a turn: touches, keys, `dt` |
 | `x.end()` | `void` | send the commands of the turn to the chip and wait for the next turn |
 | `x.close()` | `void` | close the picture |
+### `AppCanvas`
+
+| call | gives | what it does |
+|---|---|---|
+| `x.init()` | `void` |  |
+| `x.begin()` | `void` |  |
+| `x.clear(int argb)` | `void` |  |
+| `x.rect(double x, double y, double w, double h, int argb)` | `void` |  |
+| `x.tri(double x0, double y0, double x1, double y1, double x2, double y2, int argb)` | `void` |  |
+| `x.line(double x0, double y0, double x1, double y1, double width, int argb)` | `void` |  |
+| `x.circle(double cx, double cy, double r, int argb)` | `void` |  |
+| `x.end()` | `void` |  |
+| `x.has_instancing()` | `bool` |  |
+| `x.has_shaders()` | `bool` |  |

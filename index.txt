@@ -3,12 +3,14 @@
 # The index of libraries for jget (jc lib list | install NAME).
 # The libraries that come with the compiler (cpu, net, math ...) are not listed here: they need no install.
 canvas 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/canvas.j 9f1c7828fe18c6f24b674c8e23c9fbd38bdf3de1920171c7daa28489d3e2976f
+canvas2d 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/canvas2d.j 7219d29b25a3f620e62a630379a19507fc994e02624c24b76c5874b56b2580dc
 complex 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/complex.j 1aed66c92dda6438f5a94fc0ec0a97a6c1bce850ff276da9bfeea8415cd9df9c
 compute 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/compute.j 0f085f35713b5bbcb2c20be9a958afcd00cb93492b8ef3dde1e33572c80eee60
 deflate 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/deflate.j e36fe62b33f07892935d52f120c38174dfa95f866947dcf4390a32acbc6d22ac
 example 1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/example.j abfd04e440dd224b0d681293ef34d26a0c18b610bb412900b6634a88010ed759
 gamej 0.2.2 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gamej.j 95b027d03411710a94eb50ec756ace996ac75dc4f03d305448efbb1599f46b86
-gpu 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gpu.j 0abae8f46a97c0b4330f09028a16186dccde438a86e1123c134e35df8d32b936
+glcanvas 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/glcanvas.j 278f22c93dde67e767ef81cab8942cad1cf4e553c0777e1a87bc6f3a94d687e0
+gpu 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gpu.j 05771f01f9b8aaa7e5a3e78e2975a2f2a5589d45cc68d18c10e283cbffad6c1c
 jobs 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/jobs.j f4ecdad5c02fc5f8b5aa0ac29e2e8dffd91d3392fbc7e07fda7eafb15b571c18
 native 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/native.j 89be83affdd06e4e051e8a6eceb4f52a6d182d69f74204bd3c5742c72c127893
 neuron 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neuron.j 8e22eef8e3420c7ff97899a78dbbbf110330e273bad8b69a626c7bbe81f29b83

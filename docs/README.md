@@ -5,11 +5,13 @@ Each page has what the library is, an example that runs (with its output) and th
 | library | what it is |
 |---|---|
 | [`<canvas>`](canvas.md) | drawing with characters, with a depth buffer |
+| [`<canvas2d>`](canvas2d.md) | canvas2d |
 | [`<complex>`](complex.md) | complex numbers |
 | [`<compute>`](compute.md) | compute |
 | [`<deflate>`](deflate.md) | CRC-32, DEFLATE and gzip |
 | [`<example>`](example.md) | example |
 | [`<gamej>`](gamej.md) | Jaric Engine: a small game engine |
+| [`<glcanvas>`](glcanvas.md) | glcanvas |
 | [`<gpu>`](gpu.md) | the graphics chip through the Jaric app |
 | [`<jobs>`](jobs.md) | jobs |
 | [`<native>`](native.md) | call the libraries of the system |
