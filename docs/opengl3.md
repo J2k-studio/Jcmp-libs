@@ -7,9 +7,10 @@ Off-screen drawing with shaders (GLSL), triangles, reading pixels and compute sh
 ## About (the header of the library)
 
 ```
-opengl3 0.2.0 -- OpenGL ES 3.1 (and 2.0) from J2K, on the real driver of the phone: no app is needed.   #import <opengl3>
-(needs  jcmp -dyn  and the library native; license: MPL-2.0)
+opengl3 0.3.0 -- OpenGL ES 3.1 (and 2.0) from J2K, on the real driver of the phone: no app is needed.   #import <opengl3>
+(needs jcmp 1.2.3 for the automatic dynamic build, or jcmp -dyn before; the library native; license: MPL-2.0)
 0.2.0: textures (make_texture, make_target_texture), framebuffers (render to a texture), vertex arrays, indices (Ints, draw_elements), instancing, additive blending; native 0.1.1 has call9 (glTexImage2D).
+0.3.0: Gl::attach(w, h) uses the OpenGL ES context that an app made current (the game is a .so loaded by a GLSurfaceView); a program that imports <opengl3> needs no -dyn.
 Gl gl = Gl::open(256, 256, 3, 1);               // an off-screen context (EGL pbuffer): width, height, ES version 3.1 (or 2, 0)
 gl.clear_color(0.1, 0.2, 0.4, 1.0);   gl.clear_color_buffer();
 int prog = gl.program(vertex_source, fragment_source);        // 0 and gl.log when a shader does not compile
@@ -86,6 +87,8 @@ Every function below is used as shown: `Type::name(...)` is a static function, `
 |---|---|---|
 | `x.fn(String name)` | `int` | the address of any OpenGL function by name (call it with Native::call1 .. call8) |
 | `Gl::open(int w, int h, int major, int minor)` | `Gl` | an off-screen context: width, height, OpenGL ES version (3, 1 or 2, 0); `gl.ok`, `gl.log`, `gl.renderer` |
+| `Gl::attach(int w, int h)` | `Gl` | Use the OpenGL ES context that is already current in this thread (an Android app made it: GLSurfaceView calls the game on its GL thread). Nothing is created here; close() does not destroy anything. Give the size of the surface with resize(). |
+| `x.resize(int w, int h)` | `void` |  |
 | `x.close()` | `void` | release the context |
 | `x.viewport(int x, int y, int w, int h)` | `void` | glViewport |
 | `x.clear_color(double r, double g, double b, double a)` | `void` | glClearColor (red, green, blue, alpha from 0.0 to 1.0) |

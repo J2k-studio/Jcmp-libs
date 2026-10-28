@@ -1,6 +1,7 @@
-// opengl3 0.2.0 -- OpenGL ES 3.1 (and 2.0) from J2K, on the real driver of the phone: no app is needed.   #import <opengl3>
-//   (needs  jcmp -dyn  and the library native; license: MPL-2.0)
+// opengl3 0.3.0 -- OpenGL ES 3.1 (and 2.0) from J2K, on the real driver of the phone: no app is needed.   #import <opengl3>
+//   (needs jcmp 1.2.3 for the automatic dynamic build, or jcmp -dyn before; the library native; license: MPL-2.0)
 //   0.2.0: textures (make_texture, make_target_texture), framebuffers (render to a texture), vertex arrays, indices (Ints, draw_elements), instancing, additive blending; native 0.1.1 has call9 (glTexImage2D).
+//   0.3.0: Gl::attach(w, h) uses the OpenGL ES context that an app made current (the game is a .so loaded by a GLSurfaceView); a program that imports <opengl3> needs no -dyn.
 //   Gl gl = Gl::open(256, 256, 3, 1);               // an off-screen context (EGL pbuffer): width, height, ES version 3.1 (or 2, 0)
 //   gl.clear_color(0.1, 0.2, 0.4, 1.0);   gl.clear_color_buffer();
 //   int prog = gl.program(vertex_source, fragment_source);        // 0 and gl.log when a shader does not compile
@@ -92,7 +93,7 @@ struct Gl {
         g.egl = Native::open("libEGL.so");
         g.gles = Native::open("libGLESv3.so");
         if g.gles == 0 { g.gles = Native::open("libGLESv2.so"); }
-        if g.egl == 0 || g.gles == 0 { g.log = "libEGL / libGLES not found (build the program with jcmp -dyn)"; return g; }
+        if g.egl == 0 || g.gles == 0 { g.log = "libEGL / libGLES not found (a program that imports <native> or <opengl3> is made dynamic by the compiler)"; return g; }
         int get_display = Native::sym(g.egl, "eglGetDisplay");
         int initialize = Native::sym(g.egl, "eglInitialize");
         int bind_api = Native::sym(g.egl, "eglBindAPI");
@@ -147,12 +148,41 @@ struct Gl {
         return g;
     }
 
+    // Use the OpenGL ES context that is already current in this thread (an Android app made it: GLSurfaceView calls the game on its GL thread).
+    // Nothing is created here; close() does not destroy anything. Give the size of the surface with resize().
+    static Gl attach(int w, int h) {
+        Gl g;
+        g.w = w;
+        g.h = h;
+        g.major = 3;
+        g.minor = 0;
+        g.ok = false;
+        g.log = "";
+        g.renderer = "";
+        g.fns = arr(64);
+        g.names = arr(64);
+        g.egl = 0;
+        g.dpy = 0;
+        g.ctx = 0;
+        g.surf = 0;
+        g.gles = Native::open("libGLESv3.so");
+        if g.gles == 0 { g.gles = Native::open("libGLESv2.so"); }
+        if g.gles == 0 { g.log = "libGLES not found"; return g; }
+        g.ok = true;
+        int r = Native::call1(g.fn("glGetString"), 7937);          // GL_RENDERER (0 when no context is current)
+        if r == 0 { g.ok = false; g.log = "no OpenGL ES context is current in this thread"; return g; }
+        g.renderer = Native::text(r);
+        return g;
+    }
+    void resize(self, int w, int h) { self.w = w; self.h = h; self.viewport(0, 0, w, h); }
+
     void close(self) {
-        if self.ok {
+        if self.ok && self.egl != 0 {
             int mc = Native::sym(self.egl, "eglMakeCurrent");
             Native::call4(mc, self.dpy, 0, 0, 0);
             self.ok = false;
         }
+        if self.egl == 0 { self.ok = false; }                       // attached: the app owns the context
     }
 
     // ---- state and clearing
