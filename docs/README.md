@@ -11,6 +11,7 @@ Each page has what the library is, an example that runs (with its output) and th
 | [`<deflate>`](deflate.md) | CRC-32, DEFLATE and gzip |
 | [`<example>`](example.md) | example |
 | [`<gamej>`](gamej.md) | Jaric Engine: a small game engine |
+| [`<glapp>`](glapp.md) | glapp |
 | [`<glcanvas>`](glcanvas.md) | glcanvas |
 | [`<gpu>`](gpu.md) | the graphics chip through the Jaric app |
 | [`<jobs>`](jobs.md) | jobs |

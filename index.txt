@@ -9,6 +9,7 @@ compute 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/c
 deflate 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/deflate.j e36fe62b33f07892935d52f120c38174dfa95f866947dcf4390a32acbc6d22ac
 example 1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/example.j abfd04e440dd224b0d681293ef34d26a0c18b610bb412900b6634a88010ed759
 gamej 0.2.2 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gamej.j 95b027d03411710a94eb50ec756ace996ac75dc4f03d305448efbb1599f46b86
+glapp 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/glapp.j 5778288a0afa728e94081b41616dadc5fa8f6916cc33401ae9f845a5626b73ca
 glcanvas 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/glcanvas.j cf63c05930ef42e7e225c3830c3fb7477f3e9fc8ce65bebea2c6a4c4beef0877
 gpu 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gpu.j d2dd662c04381b21f0de3437aefad1c9a9c212c25278cfb2dea78ab095b5d680
 jobs 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/jobs.j f4ecdad5c02fc5f8b5aa0ac29e2e8dffd91d3392fbc7e07fda7eafb15b571c18
