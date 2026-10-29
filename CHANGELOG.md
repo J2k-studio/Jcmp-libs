@@ -1,5 +1,9 @@
 # Jcmp-libs changelog (what changed in the libraries, newest first)
 
+## neuron 0.3.0 (2026-10-29)
+* **Added:** `Tensor32` (float32, up to 4 dimensions, fast threaded matmul: 3.2 GFLOPS at 128, 5.2 at 256) and `Graph` (autograd with a tape: matmul, add with bias, mul, relu, tanh, sigmoid, mse, softmax_ce, backward, sgd). Gradients checked against numeric differences; XOR and a 3-class problem train.
+* **Fixed:** none.
+
 ## discord 0.2.0 and websocket 0.2.0 (2026-10-29)
 * **Added:** `discord`: the live Gateway: `Gw::connect(token, Gw::intents())`, `gw.next(wait_ms)` gives events as they happen (READY, MESSAGE_CREATE with channel/author/bot flag/text, any other event with its JSON, CLOSED, RECONNECT, INVALID_SESSION); the identify and the heartbeats are done by `next`. `websocket`: `ws.recv_wait(ms)` (waits at most ms, kind 0 when nothing came) and `ws.fd()`. Tested against a pretend Gateway.
 * **Fixed:** none.

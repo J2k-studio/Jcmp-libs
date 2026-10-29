@@ -82,3 +82,25 @@ The same product as `matmul`, for big tables: the numbers are packed as float32 
 ```jk
 Tensor c = a.matmul_fast(b);     // 256 x 256: 7 times faster than a.matmul(b) on a Kirin 990
 ```
+
+## 0.3.0: `Tensor32` and `Graph` (float32 and autograd)
+`Tensor32` keeps float32 numbers with a shape of up to 4 numbers (the last is the width of a row). The old `Tensor` (double) and `Network` stay.
+```jk
+Tensor32 a = Tensor32::random(64, 32, 1, 0.5);        // rows, cols, seed, scale
+Tensor32 c = a.matmul(b);   a.add(bias_row);   a.mul(o);   a.scale(2.0);   a.transpose();   a.relu();   a.softmax();
+a.sum(); a.mean(); a.get(r, c); a.set(r, c, v); a.copy(); a.reshape(shape)
+```
+`matmul` is the fast kernel (packed float32, dot products, 4 threads for big tables): 3.2 GFLOPS at 128x128 and 5.2 at 256x256 on a Kirin 990.
+
+`Graph` is autograd with a tape (reverse mode). A node is an `int`.
+```jk
+Graph g = Graph::make();
+int w = g.param(Tensor32::random(2, 6, 1, 1.0));   int b = g.param(Tensor32::zeros(1, 6));
+g.mark();                                          // the nodes so far are the parameters
+for step in 0..1000 {
+    int h = g.tanh(g.add(g.matmul(g.input(xs), w), b));
+    int loss = g.mse(h, ys);                       // or g.softmax_ce(scores, classes) with one class number per row
+    g.backward(loss);   g.sgd(0.1);   g.clear();   // clear() keeps the parameters and throws the rest of the step away
+}
+```
+Ops: `matmul`, `add` (same shape or one row = bias), `mul`, `relu`, `tanh`, `sigmoid`, `mse`, `softmax_ce`. `g.value(n)` and `g.gradient(n)` give the Tensor32 of a node. Every op's gradient is checked against a numeric difference in the tests; XOR and a 3-class problem train. Not yet: AdamW, layers (embedding, norm, attention, conv), GGUF (see the plan in the project: N3-N7).

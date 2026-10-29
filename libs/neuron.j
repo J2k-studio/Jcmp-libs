@@ -1,4 +1,4 @@
-// neuron 0.2.0 -- tensors and small neural networks that train on the phone.   #import <neuron>   (needs jcmp 1.1.0.0; license: MPL-2.0)
+// neuron 0.3.0 -- tensors and small neural networks that train on the phone.   #import <neuron>   (needs jcmp 1.1.0.0; license: MPL-2.0)
 // 0.2.0: Tensor::matmul_fast(o): float32 + NEON dot products + threads for big tables (see the fast way below)
 //   Tensor a = Tensor::zeros(2, 3);   a.set(0, 1, 5.0);   Tensor c = a.matmul(b);   Tensor p = c.relu().softmax();
 //   Network n = Network::make();   n.add(2, 8);   n.add(8, 1);                // layers of neurons: relu between them
@@ -278,6 +278,350 @@ struct Network {
             at += 3;
         }
         return n;
+    }
+}
+
+// ============================================================================================================================
+// neuron 0.3.0: Tensor32 (float32, up to 4 dimensions) and Graph (autograd with a tape). The old Tensor / Network above stay as they are.
+//   Graph g = Graph::make();
+//   int w = g.param(Tensor32::random(2, 8, 1, 0.5));   int b = g.param(Tensor32::zeros(1, 8));      // parameters live as long as the graph
+//   g.mark();                                                                                      // everything made after mark() is one step
+//   for step in 0..1000 {
+//       int x = g.input(xs);   int h = g.relu(g.add(g.matmul(x, w), b));   int loss = g.mse(h, ys);
+//       g.backward(loss);   g.sgd(0.1);   g.clear();                                                // clear() throws the step away, keeps the parameters
+//   }
+// A node is an int (its number). g.value(n) is the Tensor32 of a node, g.grad(n) its gradient after backward.
+// ============================================================================================================================
+
+struct Tensor32 {
+    int[] shape;                       // 1 to 4 numbers, the last one is the width of a row
+    float[] d;
+
+    static Tensor32 make(int[] shape) {
+        Tensor32 t;
+        t.shape = arr(shape.len + 1);                  // a copy: assigning the array would move it out of the caller's tensor
+        int n = 1;
+        for i in 0..shape.len { t.shape.push(shape[i]); n = n * shape[i]; }
+        t.d = arr(n + 1);
+        for i in 0..n { t.d.push(0.0); }
+        return t;
+    }
+    static Tensor32 zeros(int rows, int cols) {
+        int[] s = arr(2);
+        s.push(rows);
+        s.push(cols);
+        return Tensor32::make(s);
+    }
+    // numbers from -scale to scale (a small generator with the seed: the same seed gives the same numbers)
+    static Tensor32 random(int rows, int cols, int seed, double scale) {
+        Tensor32 t = Tensor32::zeros(rows, cols);
+        int s = seed * 2654435761 + 12345;
+        for i in 0..rows * cols {
+            s = (s * 1103515245 + 12345) & 2147483647;
+            t.d[i] = (float)(((double)(s % 2000) / 1000.0 - 1.0) * scale);
+        }
+        return t;
+    }
+    // from a flat list of numbers, row by row
+    static Tensor32 from_list(int rows, int cols, double[] v) {
+        Tensor32 t = Tensor32::zeros(rows, cols);
+        for i in 0..rows * cols { t.d[i] = (float)v[i]; }
+        return t;
+    }
+    int size(self) { return self.d.len; }
+    int cols(self) { return self.shape[self.shape.len - 1]; }
+    int rows(self) { return self.d.len / self.shape[self.shape.len - 1]; }
+    double get(self, int r, int c) { return (double)self.d[r * self.cols() + c]; }
+    void set(self, int r, int c, double v) { self.d[r * self.cols() + c] = (float)v; }
+    Tensor32 copy(self) {
+        Tensor32 t = Tensor32::make(self.shape);
+        for i in 0..self.d.len { t.d[i] = self.d[i]; }
+        return t;
+    }
+    // the same numbers with another shape (the product must stay the same; a copy)
+    Tensor32 reshape(self, int[] shape) {
+        Tensor32 t = Tensor32::make(shape);
+        for i in 0..self.d.len { t.d[i] = self.d[i]; }
+        return t;
+    }
+
+    // a + b: the same shape, or b is one row that is added to every row (the bias)
+    Tensor32 add(self, Tensor32 o) {
+        Tensor32 r = Tensor32::make(self.shape);
+        int c = self.cols();
+        int n = self.d.len;
+        if o.d.len == n { for i in 0..n { r.d[i] = self.d[i] + o.d[i]; } }
+        else { for i in 0..n { r.d[i] = self.d[i] + o.d[i % c]; } }
+        return r;
+    }
+    Tensor32 mul(self, Tensor32 o) {
+        Tensor32 r = Tensor32::make(self.shape);
+        for i in 0..self.d.len { r.d[i] = self.d[i] * o.d[i]; }
+        return r;
+    }
+    Tensor32 scale(self, double k) {
+        Tensor32 r = Tensor32::make(self.shape);
+        float kf = (float)k;
+        for i in 0..self.d.len { r.d[i] = self.d[i] * kf; }
+        return r;
+    }
+    Tensor32 transpose(self) {
+        int m = self.rows();
+        int n = self.cols();
+        Tensor32 r = Tensor32::zeros(n, m);
+        for i in 0..m { for j in 0..n { r.d[j * m + i] = self.d[i * n + j]; } }
+        return r;
+    }
+    Tensor32 relu(self) {
+        Tensor32 r = Tensor32::make(self.shape);
+        for i in 0..self.d.len { if self.d[i] > 0.0 { r.d[i] = self.d[i]; } }
+        return r;
+    }
+    Tensor32 softmax(self) {                           // every row becomes numbers that sum to 1
+        Tensor32 r = Tensor32::make(self.shape);
+        int c = self.cols();
+        int m = self.rows();
+        for i in 0..m {
+            double mx = (double)self.d[i * c];
+            for j in 0..c { if (double)self.d[i * c + j] > mx { mx = (double)self.d[i * c + j]; } }
+            double s = 0.0;
+            for j in 0..c {
+                double e = Math::exp((double)self.d[i * c + j] - mx);
+                r.d[i * c + j] = (float)e;
+                s += e;
+            }
+            for j in 0..c { r.d[i * c + j] = (float)((double)r.d[i * c + j] / s); }
+        }
+        return r;
+    }
+    double sum(self) {
+        double s = 0.0;
+        for i in 0..self.d.len { s += (double)self.d[i]; }
+        return s;
+    }
+    double mean(self) { return self.sum() / (double)self.d.len; }
+
+    // a @ b. Small tables: three plain loops in the order i, k, j (the inner loop walks both rows). Big tables: packed, dot products, threads (as matmul_fast).
+    Tensor32 matmul(self, Tensor32 o) {
+        int m = self.rows();
+        int k = self.cols();
+        int n = o.cols();
+        Tensor32 r = Tensor32::zeros(m, n);
+        if m * k * n < 32768 {
+            for i in 0..m {
+                for kk in 0..k {
+                    float a = self.d[i * k + kk];
+                    for j in 0..n { r.d[i * n + j] += a * o.d[kk * n + j]; }
+                }
+            }
+            return r;
+        }
+        int kp = (k + 7) / 8 * 8;
+        int sa = m * kp * 4 + 64;
+        int sb = n * kp * 4 + 64;
+        int sc = m * n * 4 + 64;
+        float^ pa = (float^)Sys::mmap(sa);
+        float^ pbt = (float^)Sys::mmap(sb);
+        float^ pc = (float^)Sys::mmap(sc);
+        for i in 0..m { for kk in 0..k { pa[i * kp + kk] = self.d[i * k + kk]; } }
+        for jj in 0..n { for kk in 0..k { pbt[jj * kp + kk] = o.d[kk * n + jj]; } }
+        int threads = 4;
+        if m < 16 { threads = 1; }
+        mm_a = pa; mm_bt = pbt; mm_c = pc; mm_kp = kp; mm_n = n;
+        int^ rng = (int^)Sys::mmap(4096);
+        mm_range = rng;
+        for t in 0..threads { rng[2 * t] = m * t / threads; rng[2 * t + 1] = m * (t + 1) / threads; }
+        if threads == 1 { mm_rows((void^)0); }
+        else {
+            Thread[] ts = arr(4);
+            for t in 0..threads { ts.push(create(mm_rows, (void^)t)); }
+            for t in 0..threads { ts[t].join(); }
+        }
+        Sys::munmap((void^)rng, 4096);
+        for i in 0..m * n { r.d[i] = pc[i]; }
+        Sys::munmap((void^)pa, sa);
+        Sys::munmap((void^)pbt, sb);
+        Sys::munmap((void^)pc, sc);
+        return r;
+    }
+}
+
+// operations of the tape
+int OP_INPUT() { return 0; }
+int OP_PARAM() { return 1; }
+int OP_MATMUL() { return 2; }
+int OP_ADD() { return 3; }
+int OP_MUL() { return 4; }
+int OP_RELU() { return 5; }
+int OP_TANH() { return 6; }
+int OP_SIGMOID() { return 7; }
+int OP_MSE() { return 8; }
+int OP_SOFTMAX_CE() { return 9; }
+
+struct Graph {
+    Tensor32[] val;                    // the value of every node
+    Tensor32[] grad;                   // its gradient (zeros until backward)
+    int[] op;
+    int[] pa;                          // the first parent (a node number, -1 for none)
+    int[] pb;
+    int[] label;                       // the class numbers of the last softmax_ce (the target of that node)
+    Tensor32[] target;                 // the target table of an mse node (a dummy for the others)
+    int count;                         // the nodes now
+    int keep;                          // the nodes before mark(): the parameters
+
+    static Graph make() {
+        Graph g;
+        g.val = arr(64);
+        g.grad = arr(64);
+        g.op = arr(64);
+        g.pa = arr(64);
+        g.pb = arr(64);
+        g.label = arr(1);
+        g.target = arr(64);
+        g.count = 0;
+        g.keep = 0;
+        return g;
+    }
+    int node(self, int op, int a, int b, Tensor32 v) {
+        self.val.push(v);
+        self.grad.push(Tensor32::zeros(1, 1));
+        self.op.push(op);
+        self.pa.push(a);
+        self.pb.push(b);
+        self.target.push(Tensor32::zeros(1, 1));
+        self.count += 1;
+        return self.count - 1;
+    }
+    int input(self, Tensor32 t) { return self.node(OP_INPUT(), -1, -1, t); }
+    int param(self, Tensor32 t) { return self.node(OP_PARAM(), -1, -1, t); }
+    // the nodes made so far are the parameters; clear() goes back to this point
+    void mark(self) { self.keep = self.count; }
+    void clear(self) {
+        while self.count > self.keep {
+            Tensor32 gone = self.val.pop();
+            Tensor32 gone2 = self.grad.pop();
+            self.op.pop();
+            self.pa.pop();
+            self.pb.pop();
+            Tensor32 gone3 = self.target.pop();
+            self.count -= 1;
+        }
+    }
+    Tensor32 value(self, int n) { return self.val[n]; }
+    Tensor32 gradient(self, int n) { return self.grad[n]; }
+
+    int matmul(self, int a, int b) { return self.node(OP_MATMUL(), a, b, self.val[a].matmul(self.val[b])); }
+    int add(self, int a, int b) { return self.node(OP_ADD(), a, b, self.val[a].add(self.val[b])); }
+    int mul(self, int a, int b) { return self.node(OP_MUL(), a, b, self.val[a].mul(self.val[b])); }
+    int relu(self, int a) { return self.node(OP_RELU(), a, -1, self.val[a].relu()); }
+    int tanh(self, int a) {
+        Tensor32 r = Tensor32::make(self.val[a].shape);
+        for i in 0..r.d.len { r.d[i] = (float)Math::tanh((double)self.val[a].d[i]); }
+        return self.node(OP_TANH(), a, -1, r);
+    }
+    int sigmoid(self, int a) {
+        Tensor32 r = Tensor32::make(self.val[a].shape);
+        for i in 0..r.d.len { r.d[i] = (float)(1.0 / (1.0 + Math::exp(0.0 - (double)self.val[a].d[i]))); }
+        return self.node(OP_SIGMOID(), a, -1, r);
+    }
+    // the mean of the squares of (a - target): one number
+    int mse(self, int a, Tensor32 target) {
+        double s = 0.0;
+        for i in 0..target.d.len {
+            double e = (double)self.val[a].d[i] - (double)target.d[i];
+            s += e * e;
+        }
+        Tensor32 r = Tensor32::zeros(1, 1);
+        r.d[0] = (float)(s / (double)target.d.len);
+        int n = self.node(OP_MSE(), a, -1, r);
+        self.target[n] = target;
+        return n;
+    }
+    // softmax of every row of a (the scores), then the mean of -log(probability of the right class); classes: one class number per row
+    int softmax_ce(self, int a, int[] classes) {
+        Tensor32 p = self.val[a].softmax();
+        int c = p.cols();
+        double s = 0.0;
+        for i in 0..classes.len { s = s - Math::log((double)p.d[i * c + classes[i]] + 0.0000000001); }
+        Tensor32 r = Tensor32::zeros(1, 1);
+        r.d[0] = (float)(s / (double)classes.len);
+        int n = self.node(OP_SOFTMAX_CE(), a, -1, r);
+        self.label = classes;
+        self.target[n] = p;
+        return n;
+    }
+
+    // adds g to the gradient of node n
+    void give(self, int n, Tensor32 g) {
+        if self.grad[n].d.len != g.d.len { self.grad[n] = g.copy(); return; }
+        for i in 0..g.d.len { self.grad[n].d[i] += g.d[i]; }
+    }
+    // the gradients of everything the node `loss` depends on (loss: a node with one number); the gradients of an earlier step are forgotten
+    void backward(self, int loss) {
+        for i in 0..self.count { self.grad[i] = Tensor32::zeros(1, 1); }
+        Tensor32 one = Tensor32::zeros(1, 1);
+        one.d[0] = 1.0;
+        self.grad[loss] = one;
+        int i = loss;
+        while i >= 0 {
+            if self.grad[i].d.len == self.val[i].d.len || self.op[i] == OP_MSE() || self.op[i] == OP_SOFTMAX_CE() {
+                int o = self.op[i];
+                int a = self.pa[i];
+                int b = self.pb[i];
+                Tensor32 dy = self.grad[i];
+                if o == OP_MATMUL() {
+                    self.give(a, dy.matmul(self.val[b].transpose()));
+                    self.give(b, self.val[a].transpose().matmul(dy));
+                } else if o == OP_ADD() {
+                    self.give(a, dy);
+                    if self.val[b].d.len == dy.d.len { self.give(b, dy); }
+                    else {                                                 // the bias: the sum of the rows
+                        int c = dy.cols();
+                        Tensor32 gb = Tensor32::zeros(1, c);
+                        for r in 0..dy.rows() { for j in 0..c { gb.d[j] += dy.d[r * c + j]; } }
+                        self.give(b, gb);
+                    }
+                } else if o == OP_MUL() {
+                    self.give(a, dy.mul(self.val[b]));
+                    self.give(b, dy.mul(self.val[a]));
+                } else if o == OP_RELU() {
+                    Tensor32 g = Tensor32::make(dy.shape);
+                    for k in 0..g.d.len { if self.val[a].d[k] > 0.0 { g.d[k] = dy.d[k]; } }
+                    self.give(a, g);
+                } else if o == OP_TANH() {
+                    Tensor32 g = Tensor32::make(dy.shape);
+                    for k in 0..g.d.len { g.d[k] = dy.d[k] * (1.0 - self.val[i].d[k] * self.val[i].d[k]); }
+                    self.give(a, g);
+                } else if o == OP_SIGMOID() {
+                    Tensor32 g = Tensor32::make(dy.shape);
+                    for k in 0..g.d.len { g.d[k] = dy.d[k] * self.val[i].d[k] * (1.0 - self.val[i].d[k]); }
+                    self.give(a, g);
+                } else if o == OP_MSE() {
+                    Tensor32 g = Tensor32::make(self.val[a].shape);
+                    float k2 = (float)(2.0 * (double)dy.d[0] / (double)g.d.len);
+                    for k in 0..g.d.len { g.d[k] = (self.val[a].d[k] - self.target[i].d[k]) * k2; }
+                    self.give(a, g);
+                } else if o == OP_SOFTMAX_CE() {
+                    Tensor32 g = self.target[i].copy();                    // the probabilities
+                    int c = g.cols();
+                    int rows = self.label.len;
+                    for r in 0..rows { g.d[r * c + self.label[r]] -= 1.0; }
+                    float k3 = (float)((double)dy.d[0] / (double)rows);
+                    for k in 0..g.d.len { g.d[k] = g.d[k] * k3; }
+                    self.give(a, g);
+                }
+            }
+            i -= 1;
+        }
+    }
+    // plain gradient descent on the parameters (the first `keep` nodes that are parameters)
+    void sgd(self, double rate) {
+        float r = (float)rate;
+        for n in 0..self.keep {
+            if self.op[n] == OP_PARAM() && self.grad[n].d.len == self.val[n].d.len {
+                for k in 0..self.val[n].d.len { self.val[n].d[k] -= r * self.grad[n].d[k]; }
+            }
+        }
     }
 }
 
