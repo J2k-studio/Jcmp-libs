@@ -21,6 +21,7 @@ Each page has what the library is, an example that runs (with its output) and th
 | [`<phys2d>`](phys2d.md) | phys2d |
 | [`<png>`](png.md) | png |
 | [`<profile>`](profile.md) | profile |
+| [`<qr>`](qr.md) | qr |
 | [`<quat>`](quat.md) | rotations in 3D (quaternions) |
 | [`<screen>`](screen.md) | a picture of colour dots in the terminal |
 | [`<shaders>`](shaders.md) | shaders |
