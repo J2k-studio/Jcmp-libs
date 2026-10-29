@@ -1,7 +1,3 @@
-# NAME is letters, digits and _ only. The library is one J2K source file (NAME.j). SHA256 is the checksum of that file.
-# One line for each library:  NAME VERSION URL SHA256
-# The index of libraries for jget (jc lib list | install NAME).
-# The libraries that come with the compiler (cpu, net, math ...) are not listed here: they need no install.
 canvas 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/canvas.j 9f1c7828fe18c6f24b674c8e23c9fbd38bdf3de1920171c7daa28489d3e2976f
 canvas2d 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/canvas2d.j 97588a59dba6933cfa80ca1b1556d3b7e3988d67ffe5bfe091b5624a8c2c61ba
 complex 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/complex.j 1aed66c92dda6438f5a94fc0ec0a97a6c1bce850ff276da9bfeea8415cd9df9c
@@ -14,8 +10,10 @@ glapp 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gla
 glcanvas 0.2.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/glcanvas.j b8eab77826eafae8b5861cba6eba773f597895d4c93f22408daaa16704afd44d
 gpu 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gpu.j d2dd662c04381b21f0de3437aefad1c9a9c212c25278cfb2dea78ab095b5d680
 jobs 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/jobs.j f4ecdad5c02fc5f8b5aa0ac29e2e8dffd91d3392fbc7e07fda7eafb15b571c18
+# NAME is letters, digits and _ only. The library is one J2K source file (NAME.j). SHA256 is the checksum of that file.
 native 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/native.j 89be83affdd06e4e051e8a6eceb4f52a6d182d69f74204bd3c5742c72c127893
 neuron 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neuron.j 492d702645fc3f5a207597ab36e7a2e5f906d39a0d5fa7f572a9fe849a188919
+# One line for each library:  NAME VERSION URL SHA256
 opengl3 0.3.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/opengl3.j ff1da5104c3962b559e947304b785a1e66978d94f3a9b61576c80c6d7a6eace1
 phys2d 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/phys2d.j aabde720965677fb2d4204e734803fc8c9dec60b4195224855aa441da191b576
 png 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/png.j 62c381b6bcfb63c684fbdb1e4bbcd6572313348c66ec14de3018e84291f4fac1
@@ -30,6 +28,9 @@ spritebatch 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/li
 stats 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/stats.j 4523a719d9b67ab248dab80ced5d0ca34af8587d305aa721414305ed1a6019e0
 tasks 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/tasks.j 36f157ba9345f0f831a98e9f607f85814fb32e40ec8d36da07603bf353d9d2c1
 telegram 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/telegram.j 31307b6217ce4d9113d3bc54ae00e4403e4e25b219f69a1c1d65522c0a8a0d06
+# The index of libraries for jget (jc lib list | install NAME).
+# The libraries that come with the compiler (cpu, net, math ...) are not listed here: they need no install.
 tilemap 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/tilemap.j 7c8f9cb88b34f11cc69f9ce0752a37ff6bcdb8599a2fceb825107cfacf8b46a5
 vulkan 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/vulkan.j 29ace19adf9c1200c5550943bbc9d821e2256110d815e3928affef18620d8ad4
 web 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/web.j 5b3c2969f5da08a07e5464240fefb5c74757a13fdad903a8b555bc667bcf1c55
+websocket 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/websocket.j 671f6e836dc4797124f219dd21e5509fcdda76ae056c0235e4f65f1c030b3202

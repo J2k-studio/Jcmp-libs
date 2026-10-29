@@ -1,5 +1,9 @@
 # Jcmp-libs changelog (what changed in the libraries, newest first)
 
+## websocket 0.1.0 (2026-10-29)
+* **Added:** `websocket`: a WebSocket client over ws and wss: handshake, masked text and binary frames of any size, ping answered, fragments joined, close frame. Tested against a pretend server.
+* **Fixed:** none.
+
 ## discord 0.1.0 (2026-10-29)
 * **Added:** `discord`: a bot of Discord over REST: `send(channel, text)`, `messages(channel, after, limit)` (oldest first, the id of the newest as `last`, the bot flag); Discord's own words in the errors. The live Gateway (WebSocket) comes later. Tested against a pretend server.
 * **Fixed:** none.
