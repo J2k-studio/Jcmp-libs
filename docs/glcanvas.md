@@ -7,7 +7,8 @@ Install: `jc lib install glcanvas`   Use: `#import <glcanvas>`
 ## About (the header of the library)
 
 ```
-glcanvas 0.2.0 -- the Canvas2d interface on OpenGL ES 3 (and on ES 2): every shape of a frame goes into one buffer and is drawn with ONE call.   #import <opengl3> <canvas2d> <glcanvas>   (license: MPL-2.0)
+glcanvas 0.2.1 -- the Canvas2d interface on OpenGL ES 3 (and on ES 2): every shape of a frame goes into one buffer and is drawn with ONE call.   #import <opengl3> <canvas2d> <glcanvas>   (license: MPL-2.0)
+0.2.1: image_rot (a picture turned about its middle; a method of GlCanvas, not of the interface).
 0.2.0: pictures (load a PNG, image()), the same code on an OpenGL ES 2 context (Gl::open(w, h, 2, 0)): no vertex arrays, shaders of GLSL 100.
 Gl gl = Gl::open(320, 180, 3, 1);                      // off-screen; in an app: Gl::attach(w, h)
 GlCanvas c; c.init(); c.setup(gl, 320.0, 180.0);       // sets the shader, the buffer and the size of the surface in dots
@@ -39,3 +40,4 @@ Every function below is used as shown: `Type::name(...)` is a static function, `
 | `x.has_shaders()` | `bool` |  |
 | `x.load(String path)` | `int` | a PNG file becomes a picture number (-1 when the file cannot be read) |
 | `x.image(int pic, double x, double y, double w, double h, int tint)` | `void` | the picture in the box (x, y, w, h); drawn at once (the shapes before it are drawn first, so the order is kept) |
+| `x.image_rot(int pic, double cx, double cy, double w, double h, double angle, int tint)` | `void` | the picture in a box of w x h dots whose middle is (cx, cy), turned by `angle` radians (clockwise on the screen, about the middle) |
