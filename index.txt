@@ -28,5 +28,7 @@ sprite 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/sp
 spritebatch 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/spritebatch.j 44816be4cc61dc3a34bfc549e0965e11dd41327288e06de708a7d0efb99bcc27
 stats 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/stats.j 4523a719d9b67ab248dab80ced5d0ca34af8587d305aa721414305ed1a6019e0
 tasks 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/tasks.j 36f157ba9345f0f831a98e9f607f85814fb32e40ec8d36da07603bf353d9d2c1
+telegram 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/telegram.j 31307b6217ce4d9113d3bc54ae00e4403e4e25b219f69a1c1d65522c0a8a0d06
 tilemap 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/tilemap.j 7c8f9cb88b34f11cc69f9ce0752a37ff6bcdb8599a2fceb825107cfacf8b46a5
 vulkan 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/vulkan.j 29ace19adf9c1200c5550943bbc9d821e2256110d815e3928affef18620d8ad4
+web 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/web.j 5b3c2969f5da08a07e5464240fefb5c74757a13fdad903a8b555bc667bcf1c55

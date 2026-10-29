@@ -1,5 +1,9 @@
 # Jcmp-libs changelog (what changed in the libraries, newest first)
 
+## web 0.1.0 and telegram 0.1.0 (2026-10-29)
+* **Added:** `web`: an HTTP client for APIs (any method, headers, body, status, redirects, chunked answers, https). `telegram`: a bot of Telegram (me, poll with offsets and long polling, send with the right JSON escapes; errors carry the words of Telegram). Tested against a pretend server. Example `examples/telegram_echo.jk`.
+* **Fixed:** none.
+
 ## neuron 0.2.0 (2026-10-29)
 * **Added:** `Tensor.matmul_fast(o)`: the product of two big tables 5-7 times faster than `matmul` (float32 inside, NEON dot products, 4 threads; 128x128: 2.5 GFLOPS, 256x256: 4.7 GFLOPS on a Kirin 990, `matmul`: 0.5). Small tables use the plain loop. `Dense` (the layers of `Network`) uses it, so networks with big layers train faster.
 * **Needs:** the library `simd` now (`jc lib install simd`); `cpu` comes with the compiler. **Fixed:** none.

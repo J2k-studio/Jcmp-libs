@@ -1,0 +1,24 @@
+#import <stdlib>
+#import <telegram>
+// a bot that answers every message with the same words. Make the bot with @BotFather in Telegram, give the token as the first argument:
+//   jcmp telegram_echo.jk -o echo && ./echo 123456:ABC-token
+void main() {
+    String[] a = Env::args();
+    if a.len < 2 { cout << "usage: echo TOKEN\n"; return; }
+    Telegram bot = Telegram::bot(a[1]);
+    int next = 0;
+    cout << "the bot is running (stop it with Ctrl-C)\n";
+    while true {
+        switch bot.poll(next, 25) {
+            Result::Ok(up): {
+                next = up.next;
+                for i in 0..up.count() {
+                    TgMessage m = up.get(i);
+                    cout << m.from << ": " << m.text << "\n";
+                    bot.send(m.chat, "you said: " + m.text);
+                }
+            }
+            Result::Err(e): { cout << "error: " << e.message << "\n"; Thread::sleep(3000); }
+        }
+    }
+}
