@@ -1,7 +1,8 @@
-// websocket 0.1.0 -- a WebSocket client (RFC 6455) over ws and wss.   #import <websocket>   (needs <net>; license: MPL-2.0)
+// websocket 0.2.0 -- a WebSocket client (RFC 6455) over ws and wss.   #import <websocket>   (needs <net>; license: MPL-2.0)
 //   WebSocket ws = Ws::connect("wss://gateway.discord.gg/?v=10&encoding=json", "")?;
 //   ws.send_text("{\"op\":1}");
 //   WsMessage m = ws.recv()?;           // m.kind: 1 text, 2 binary, 8 closed (m.text = the reason); pings are answered by recv itself
+//   WsMessage w = ws.recv_wait(500);    // waits at most 500 ms: kind 0 when nothing came (to send a heartbeat in between)
 //   ws.close();
 // recv waits for the next whole message (fragments are put together). It is blocking: use a thread (<tasks>) when the program has other work.
 // The answer "Sec-WebSocket-Accept" is not checked (no SHA-1 yet); the status 101 is.
@@ -105,6 +106,35 @@ struct WebSocket {
             if fin { return WebSocket::msg(kind, msg); }
         }
         return WebSocket::msg(8, "");
+    }
+
+    // the file number under the connection (for a TLS connection: the socket below it)
+    int fd(self) {
+        if self.secure == 0 { return self.h; }
+        return Crypto::tls_geti((char^)self.h, 0);
+    }
+
+    // like recv, but waits at most ms milliseconds for something to arrive: kind 0 and text "" when nothing came (the connection stays open)
+    WsMessage recv_wait(self, int ms) {
+        if self.open && self.buf.len < 2 {
+            char pfd[8];
+            char ts[16];
+            for i in 0..8 { pfd[i] = 0; }
+            for i in 0..16 { ts[i] = 0; }
+            int f = self.fd();
+            pfd[0] = (char)(f & 255);
+            pfd[1] = (char)((f >> 8) & 255);
+            pfd[2] = (char)((f >> 16) & 255);
+            pfd[3] = (char)((f >> 24) & 255);
+            pfd[4] = 1;                                     // POLLIN
+            int sec = ms / 1000;
+            int nsec = (ms % 1000) * 1000000;
+            for k in 0..8 { ts[k] = (char)((sec >> (8 * k)) & 255); }
+            for k in 0..8 { ts[8 + k] = (char)((nsec >> (8 * k)) & 255); }
+            int rc = Sys::ppoll(@pfd, 1, @ts);
+            if rc <= 0 { return WebSocket::msg(0, ""); }
+        }
+        return self.recv();
     }
 
     void close(self) {

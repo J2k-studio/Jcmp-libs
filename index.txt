@@ -3,7 +3,7 @@ canvas2d 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/
 complex 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/complex.j 1aed66c92dda6438f5a94fc0ec0a97a6c1bce850ff276da9bfeea8415cd9df9c
 compute 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/compute.j 0f085f35713b5bbcb2c20be9a958afcd00cb93492b8ef3dde1e33572c80eee60
 deflate 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/deflate.j e36fe62b33f07892935d52f120c38174dfa95f866947dcf4390a32acbc6d22ac
-discord 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/discord.j 81bc8e1f3bebfb42289c10ab9f9b70f0a4f5f1c3aa27a2b3bedc9e4647a660d4
+discord 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/discord.j 5effdcbfde18c66c7b4545ae790b1183ca0d9f55c1f81fc2736e839553cd0370
 example 1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/example.j abfd04e440dd224b0d681293ef34d26a0c18b610bb412900b6634a88010ed759
 gamej 0.2.2 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gamej.j 95b027d03411710a94eb50ec756ace996ac75dc4f03d305448efbb1599f46b86
 glapp 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/glapp.j 5778288a0afa728e94081b41616dadc5fa8f6916cc33401ae9f845a5626b73ca
@@ -33,4 +33,4 @@ telegram 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/
 tilemap 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/tilemap.j 7c8f9cb88b34f11cc69f9ce0752a37ff6bcdb8599a2fceb825107cfacf8b46a5
 vulkan 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/vulkan.j 29ace19adf9c1200c5550943bbc9d821e2256110d815e3928affef18620d8ad4
 web 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/web.j 5b3c2969f5da08a07e5464240fefb5c74757a13fdad903a8b555bc667bcf1c55
-websocket 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/websocket.j 671f6e836dc4797124f219dd21e5509fcdda76ae056c0235e4f65f1c030b3202
+websocket 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/websocket.j b0cc2f0e4dfe0626c015753e3ddf758fbc19a475d259fe4c20a24ce80ea63e62

@@ -1,5 +1,9 @@
 # Jcmp-libs changelog (what changed in the libraries, newest first)
 
+## discord 0.2.0 and websocket 0.2.0 (2026-10-29)
+* **Added:** `discord`: the live Gateway: `Gw::connect(token, Gw::intents())`, `gw.next(wait_ms)` gives events as they happen (READY, MESSAGE_CREATE with channel/author/bot flag/text, any other event with its JSON, CLOSED, RECONNECT, INVALID_SESSION); the identify and the heartbeats are done by `next`. `websocket`: `ws.recv_wait(ms)` (waits at most ms, kind 0 when nothing came) and `ws.fd()`. Tested against a pretend Gateway.
+* **Fixed:** none.
+
 ## websocket 0.1.0 (2026-10-29)
 * **Added:** `websocket`: a WebSocket client over ws and wss: handshake, masked text and binary frames of any size, ping answered, fragments joined, close frame. Tested against a pretend server.
 * **Fixed:** none.
