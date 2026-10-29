@@ -104,3 +104,22 @@ for step in 0..1000 {
 }
 ```
 Ops: `matmul`, `add` (same shape or one row = bias), `mul`, `relu`, `tanh`, `sigmoid`, `mse`, `softmax_ce`. `g.value(n)` and `g.gradient(n)` give the Tensor32 of a node. Every op's gradient is checked against a numeric difference in the tests; XOR and a 3-class problem train. Not yet: AdamW, layers (embedding, norm, attention, conv), GGUF (see the plan in the project: N3-N7).
+
+## 0.4.0: the training kit
+```jk
+Graph g = Graph::make();
+Linear l1 = g.linear(2, 12, 3);   Linear l2 = g.linear(12, 2, 4);      // a layer: two parameters (w, b), seed for the start numbers
+g.mark();
+for epoch in 0..150 {
+    int[] order = shuffled(60, epoch + 1);                             // a mixed order of 0..59 (same seed = same order)
+    // for each mini-batch: idx = some of `order`; xs.gather(idx) is the table of those rows
+    int h = g.tanh(g.apply(l1, g.input(batch)));
+    int loss = g.softmax_ce(g.apply(l2, h), classes_of_the_batch);
+    g.backward(loss);
+    g.clip(5.0);                                                       // gradients smaller when their size is above 5; returns the size
+    g.adamw(Sched::cosine(epoch, 150, 5, 0.05, 0.001), 0.001);         // learning rate: warm-up 5 steps, then a cosine down to 0.001; weight decay 0.001
+    g.clear();
+}
+g.save("model.txt");   g.load("model.txt");     // the parameters as text; load needs a graph with the same parameters (same order and shapes)
+```
+`Sched::cosine(step, total, warm, base, low)`. `adamw(lr, decay)` uses beta 0.9 / 0.999 and keeps its moving averages in the graph. `g.sgd(lr)` is still there. Tested on two rings of points (a network of 12 tanh units reaches over 95 percent).

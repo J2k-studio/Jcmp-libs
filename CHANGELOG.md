@@ -1,5 +1,9 @@
 # Jcmp-libs changelog (what changed in the libraries, newest first)
 
+## neuron 0.4.0 (2026-10-29)
+* **Added:** the training kit: `Graph.linear` / `apply` (a layer), `adamw(lr, decay)`, `clip(max_norm)`, `save(path)` / `load(path)` of the parameters, `Tensor32.gather(idx)` (a mini-batch), `shuffled(n, seed)`, `Sched::cosine` (warm-up and cosine fall). Tested on a two-rings problem; save/load restores the same answers.
+* **Fixed:** none.
+
 ## neuron 0.3.0 (2026-10-29)
 * **Added:** `Tensor32` (float32, up to 4 dimensions, fast threaded matmul: 3.2 GFLOPS at 128, 5.2 at 256) and `Graph` (autograd with a tape: matmul, add with bias, mul, relu, tanh, sigmoid, mse, softmax_ce, backward, sgd). Gradients checked against numeric differences; XOR and a 3-class problem train.
 * **Fixed:** none.

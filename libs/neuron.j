@@ -1,4 +1,4 @@
-// neuron 0.3.0 -- tensors and small neural networks that train on the phone.   #import <neuron>   (needs jcmp 1.1.0.0; license: MPL-2.0)
+// neuron 0.4.0 -- tensors and small neural networks that train on the phone.   #import <neuron>   (needs jcmp 1.1.0.0; license: MPL-2.0)
 // 0.2.0: Tensor::matmul_fast(o): float32 + NEON dot products + threads for big tables (see the fast way below)
 //   Tensor a = Tensor::zeros(2, 3);   a.set(0, 1, 5.0);   Tensor c = a.matmul(b);   Tensor p = c.relu().softmax();
 //   Network n = Network::make();   n.add(2, 8);   n.add(8, 1);                // layers of neurons: relu between them
@@ -282,7 +282,7 @@ struct Network {
 }
 
 // ============================================================================================================================
-// neuron 0.3.0: Tensor32 (float32, up to 4 dimensions) and Graph (autograd with a tape). The old Tensor / Network above stay as they are.
+// neuron 0.4.0: Tensor32 (float32, up to 4 dimensions) and Graph (autograd with a tape). The old Tensor / Network above stay as they are.
 //   Graph g = Graph::make();
 //   int w = g.param(Tensor32::random(2, 8, 1, 0.5));   int b = g.param(Tensor32::zeros(1, 8));      // parameters live as long as the graph
 //   g.mark();                                                                                      // everything made after mark() is one step
@@ -333,6 +333,13 @@ struct Tensor32 {
     int rows(self) { return self.d.len / self.shape[self.shape.len - 1]; }
     double get(self, int r, int c) { return (double)self.d[r * self.cols() + c]; }
     void set(self, int r, int c, double v) { self.d[r * self.cols() + c] = (float)v; }
+    // the rows idx[0], idx[1], ... as a new table (a mini-batch)
+    Tensor32 gather(self, int[] idx) {
+        int c = self.cols();
+        Tensor32 r = Tensor32::zeros(idx.len, c);
+        for i in 0..idx.len { for j in 0..c { r.d[i * c + j] = self.d[idx[i] * c + j]; } }
+        return r;
+    }
     Tensor32 copy(self) {
         Tensor32 t = Tensor32::make(self.shape);
         for i in 0..self.d.len { t.d[i] = self.d[i]; }
@@ -458,6 +465,12 @@ int OP_SIGMOID() { return 7; }
 int OP_MSE() { return 8; }
 int OP_SOFTMAX_CE() { return 9; }
 
+// the two parameters of a layer (node numbers of the graph that made it)
+struct Linear {
+    int w;
+    int b;
+}
+
 struct Graph {
     Tensor32[] val;                    // the value of every node
     Tensor32[] grad;                   // its gradient (zeros until backward)
@@ -468,6 +481,11 @@ struct Graph {
     Tensor32[] target;                 // the target table of an mse node (a dummy for the others)
     int count;                         // the nodes now
     int keep;                          // the nodes before mark(): the parameters
+    Tensor32[] m;                      // AdamW: the first and second moments of every parameter (made at the first adamw call)
+    Tensor32[] v;
+    int steps;                         // AdamW steps done
+    double b1t;                        // beta1 ^ steps
+    double b2t;
 
     static Graph make() {
         Graph g;
@@ -480,6 +498,11 @@ struct Graph {
         g.target = arr(64);
         g.count = 0;
         g.keep = 0;
+        g.m = arr(4);
+        g.v = arr(4);
+        g.steps = 0;
+        g.b1t = 1.0;
+        g.b2t = 1.0;
         return g;
     }
     int node(self, int op, int a, int b, Tensor32 v) {
@@ -614,6 +637,109 @@ struct Graph {
             i -= 1;
         }
     }
+
+    // a layer: y = x @ w + b; the two parameters are made now (call it before mark())
+    Linear linear(self, int inputs, int outputs, int seed) {
+        Linear l;
+        l.w = self.param(Tensor32::random(inputs, outputs, seed, Math::sqrt(3.0 / (double)inputs)));
+        l.b = self.param(Tensor32::zeros(1, outputs));
+        return l;
+    }
+    int apply(self, Linear l, int x) { return self.add(self.matmul(x, l.w), l.b); }
+
+    // the size of the gradient of all parameters (the square root of the sum of squares); when it is above max_norm all gradients are made smaller so that it is max_norm
+    double clip(self, double max_norm) {
+        double sq = 0.0;
+        for n in 0..self.keep {
+            if self.op[n] == OP_PARAM() && self.grad[n].d.len == self.val[n].d.len {
+                for k in 0..self.grad[n].d.len { sq += (double)self.grad[n].d[k] * (double)self.grad[n].d[k]; }
+            }
+        }
+        double norm = Math::sqrt(sq);
+        if norm > max_norm && norm > 0.0 {
+            float f = (float)(max_norm / norm);
+            for n in 0..self.keep {
+                if self.op[n] == OP_PARAM() && self.grad[n].d.len == self.val[n].d.len {
+                    for k in 0..self.grad[n].d.len { self.grad[n].d[k] = self.grad[n].d[k] * f; }
+                }
+            }
+        }
+        return norm;
+    }
+
+    // AdamW: the moving averages of the gradient and of its square (beta 0.9 and 0.999), and the weight decay that is taken from the weights themselves
+    void adamw(self, double lr, double decay) {
+        double beta1 = 0.9;
+        double beta2 = 0.999;
+        double eps = 0.00000001;
+        while self.m.len < self.keep { self.m.push(Tensor32::zeros(1, 1)); self.v.push(Tensor32::zeros(1, 1)); }
+        self.steps += 1;
+        self.b1t = self.b1t * beta1;
+        self.b2t = self.b2t * beta2;
+        double c1 = 1.0 - self.b1t;
+        double c2 = 1.0 - self.b2t;
+        for n in 0..self.keep {
+            if self.op[n] == OP_PARAM() && self.grad[n].d.len == self.val[n].d.len {
+                if self.m[n].d.len != self.val[n].d.len { self.m[n] = Tensor32::make(self.val[n].shape); self.v[n] = Tensor32::make(self.val[n].shape); }
+                for k in 0..self.val[n].d.len {
+                    double gk = (double)self.grad[n].d[k];
+                    double mk = beta1 * (double)self.m[n].d[k] + (1.0 - beta1) * gk;
+                    double vk = beta2 * (double)self.v[n].d[k] + (1.0 - beta2) * gk * gk;
+                    self.m[n].d[k] = (float)mk;
+                    self.v[n].d[k] = (float)vk;
+                    double w = (double)self.val[n].d[k];
+                    w = w - lr * ((mk / c1) / (Math::sqrt(vk / c2) + eps) + decay * w);
+                    self.val[n].d[k] = (float)w;
+                }
+            }
+        }
+    }
+
+    // the parameters in a text file (numbers with 9 digits); load() puts them back into a graph that has the same parameters (same order and shapes)
+    bool save(self, String path) {
+        String t = "neuron-graph 1\n";
+        int np = 0;
+        for n in 0..self.keep { if self.op[n] == OP_PARAM() { np += 1; } }
+        t.append("params " + str(np) + "\n");
+        for n in 0..self.keep {
+            if self.op[n] == OP_PARAM() {
+                String line = "";
+                for k in 0..self.val[n].shape.len { line.append(str(self.val[n].shape[k]) + " "); }
+                t.append(line + "\n");
+                String nums = "";
+                for k in 0..self.val[n].d.len {
+                    if k > 0 { nums.push(' '); }
+                    nums.append(Json::num_text((double)self.val[n].d[k]));
+                }
+                t.append(nums + "\n");
+            }
+        }
+        Result<int, Error> r = Fs::write_text(path, t);
+        return r.is_ok();
+    }
+    bool load(self, String path) {
+        Result<String, Error> r = Fs::read_text(path);
+        if !r.is_ok() { return false; }
+        String[] ls = r.take().split("\n");
+        if ls.len < 2 || ls[0] != "neuron-graph 1" { return false; }
+        int np = 0;
+        for n in 0..self.keep { if self.op[n] == OP_PARAM() { np += 1; } }
+        if ls[1] != "params " + str(np) { return false; }
+        int at = 2;
+        for n in 0..self.keep {
+            if self.op[n] == OP_PARAM() {
+                String want = "";
+                for k in 0..self.val[n].shape.len { want.append(str(self.val[n].shape[k]) + " "); }
+                if at + 1 >= ls.len || ls[at] != want { return false; }
+                String[] nums = ls[at + 1].split(" ");
+                if nums.len != self.val[n].d.len { return false; }
+                for k in 0..nums.len { self.val[n].d[k] = (float)nums[k].to_double(); }
+                at += 2;
+            }
+        }
+        return true;
+    }
+
     // plain gradient descent on the parameters (the first `keep` nodes that are parameters)
     void sgd(self, double rate) {
         float r = (float)rate;
@@ -622,6 +748,34 @@ struct Graph {
                 for k in 0..self.val[n].d.len { self.val[n].d[k] -= r * self.grad[n].d[k]; }
             }
         }
+    }
+}
+
+// the numbers 0 .. n-1 in a mixed order (the same seed gives the same order): for mini-batches
+int[] shuffled(int n, int seed) {
+    int[] a = arr(n + 1);
+    for i in 0..n { a.push(i); }
+    int s = seed * 2654435761 + 12345;
+    int i = n - 1;
+    while i > 0 {
+        s = (s * 1103515245 + 12345) & 2147483647;
+        int j = s % (i + 1);
+        int t = a[i];
+        a[i] = a[j];
+        a[j] = t;
+        i -= 1;
+    }
+    return a;
+}
+
+// learning-rate schedules: step from 0 to total
+struct Sched {
+    // grows from 0 to base in `warm` steps, then falls to low along a cosine until `total`
+    static double cosine(int step, int total, int warm, double base, double low) {
+        if step < warm { return base * (double)(step + 1) / (double)warm; }
+        double p = (double)(step - warm) / (double)(total - warm);
+        if p > 1.0 { p = 1.0; }
+        return low + (base - low) * 0.5 * (1.0 + Math::cos(3.141592653589793 * p));
     }
 }
 
