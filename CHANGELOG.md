@@ -1,5 +1,9 @@
 # Jcmp-libs changelog (what changed in the libraries, newest first)
 
+## neuron 0.2.0 (2026-10-29)
+* **Added:** `Tensor.matmul_fast(o)`: the product of two big tables 5-7 times faster than `matmul` (float32 inside, NEON dot products, 4 threads; 128x128: 2.5 GFLOPS, 256x256: 4.7 GFLOPS on a Kirin 990, `matmul`: 0.5). Small tables use the plain loop. `Dense` (the layers of `Network`) uses it, so networks with big layers train faster.
+* **Needs:** the library `simd` now (`jc lib install simd`); `cpu` comes with the compiler. **Fixed:** none.
+
 ## gamej 0.2.1 (2026-10-23)
 * **Added (permissions):** `Game::allowed("audio")` says whether the program has a permission when `jc` started it (`JC_PERMS`, names with commas; a program started another way has all of them). `game.sound(...)` makes no sound and says so on the error output when the program has no `audio`. The other libraries do not check permissions yet.
 

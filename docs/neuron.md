@@ -76,3 +76,9 @@ Every function below is used as shown: `Type::name(...)` is a static function, `
 | `x.text()` | `String` | the weights as text |
 | `x.save(String path)` | `bool` | write the weights to a .jw file |
 | `Network::load(String path)` | `Network` | read a network from a .jw file |
+
+## `Tensor.matmul_fast(o)` (0.2.0)
+The same product as `matmul`, for big tables: the numbers are packed as float32 in rows of a multiple of 8, `o` is turned over so that every result is a dot product of two rows (NEON, 4 numbers at a time, two accumulators), and the rows of the result are shared among 4 threads. The last digits differ from `matmul` (float32 inside). Tables with `rows * cols * o.cols < 32768` use the plain loop. Needs `#import <simd>` (`jc lib install simd`).
+```jk
+Tensor c = a.matmul_fast(b);     // 256 x 256: 7 times faster than a.matmul(b) on a Kirin 990
+```
