@@ -1,5 +1,9 @@
 # Jcmp-libs changelog (what changed in the libraries, newest first)
 
+## discord 0.1.0 (2026-10-29)
+* **Added:** `discord`: a bot of Discord over REST: `send(channel, text)`, `messages(channel, after, limit)` (oldest first, the id of the newest as `last`, the bot flag); Discord's own words in the errors. The live Gateway (WebSocket) comes later. Tested against a pretend server.
+* **Fixed:** none.
+
 ## web 0.1.0 and telegram 0.1.0 (2026-10-29)
 * **Added:** `web`: an HTTP client for APIs (any method, headers, body, status, redirects, chunked answers, https). `telegram`: a bot of Telegram (me, poll with offsets and long polling, send with the right JSON escapes; errors carry the words of Telegram). Tested against a pretend server. Example `examples/telegram_echo.jk`.
 * **Fixed:** none.
