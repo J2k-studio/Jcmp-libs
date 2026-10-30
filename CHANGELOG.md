@@ -1,5 +1,9 @@
 # Jcmp-libs changelog (what changed in the libraries, newest first)
 
+## neurongpu 0.1.0, neuron 0.7.1 (2026-10-30)
+* **Added:** `<neurongpu>`: `NeuronGpu::enable(min_work)` sends the products of `Tensor32.matmul` (so `Graph.matmul`, `Linear`, `Gpt`) with `m * k * n >= min_work` to the GPU (a compute shader, any shape); without a GPU it returns false and nothing changes. On a Kirin 990 it is 1.5 times faster at 256 x 256 and 2.4 times at 512 x 512; below 128 the CPU is as fast or faster. `neuron` has the hook for it (`nt_gpu_fn`).
+* **Fixed:** none.
+
 ## simd 0.10.0, gguf 0.2.0, llama 0.2.0 (2026-10-30)
 * **Added:** `i8x16` (sixteen `i8` lanes in one register) with `a.dot(b)`: four sums of four products in one instruction (`sdot`), used by `llama` and `neuron`. `gguf` keeps Q8_0 / Q4_0 weights as int8 plus scales (`QMat`, `load_mat`); `llama` multiplies them with `i8x16.dot` and precomputes the RoPE tables: a 15M q4 model runs at about 120 tokens per second (82 before) in 55 MB.
 * **Fixed:** none.

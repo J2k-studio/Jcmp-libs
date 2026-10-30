@@ -17,7 +17,8 @@ gpu 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gpu.j
 jobs 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/jobs.j f4ecdad5c02fc5f8b5aa0ac29e2e8dffd91d3392fbc7e07fda7eafb15b571c18
 llama 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/llama.j f36cf2b8712fdd7ed2d75426d11d6dca367f3479a09a65c4ad819155183e7311
 native 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/native.j 89be83affdd06e4e051e8a6eceb4f52a6d182d69f74204bd3c5742c72c127893
-neuron 0.7.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neuron.j 5a84d63b34deae551480d624e84534988e816a10d592c0871887b2d78182dfec
+neuron 0.7.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neuron.j 63ec604a38a8da5ebd8cdad786e6bdeaa60aa8c992694b4ad3cfbeeec978f99f
+neurongpu 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neurongpu.j ad3f617ceee7e2fe8104e3d3af7a217bfc365c7b1885d46b1dd5cfc759cdb3a5
 opengl3 0.3.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/opengl3.j ff1da5104c3962b559e947304b785a1e66978d94f3a9b61576c80c6d7a6eace1
 phys2d 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/phys2d.j aabde720965677fb2d4204e734803fc8c9dec60b4195224855aa441da191b576
 png 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/png.j 62c381b6bcfb63c684fbdb1e4bbcd6572313348c66ec14de3018e84291f4fac1
