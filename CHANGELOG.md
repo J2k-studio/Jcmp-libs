@@ -1,5 +1,9 @@
 # Jcmp-libs changelog (what changed in the libraries, newest first)
 
+## neuron 0.7.0 (2026-10-30)
+* **Added:** `Gpt`, a GPT you train on the phone (`Gpt::make`, `step` on a batch, `loss_on`, `write`, `save`/`load`, byte level) with `examples/train_gpt.jk`; the tool `neuron gpt train` is built on it (part of `neuron`). `Graph.acc_add` / `acc_apply` (gradients of a batch), `Tensor32.matmul` 3-4 times faster for small tables (NEON, no packing), fast `exp` / `tanh` (about 15 multiplications instead of 100 ns), attention with NEON kernels (7 ms to 3 ms for a layer of 64 x 64).
+* **Fixed:** none. (A function of the library must not have more than 8 parameters: the compiler does not warn yet.)
+
 ## neuron 0.6.0 (2026-10-30)
 * **Added:** `Graph.conv2d` (window, stride, padding, channels) and `Graph.maxpool`, with gradients checked numerically; a conv network learns to tell three kinds of pictures apart.
 * **Fixed:** none.

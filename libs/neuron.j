@@ -1,5 +1,6 @@
-// neuron 0.6.0 -- tensors and small neural networks that train on the phone.   #import <neuron>   (needs jcmp 1.1.0.0; license: MPL-2.0)
+// neuron 0.7.0 -- tensors and small neural networks that train on the phone.   #import <neuron>   (needs jcmp 1.1.0.0; license: MPL-2.0)
 // 0.2.0: Tensor::matmul_fast(o): float32 + NEON dot products + threads for big tables (see the fast way below)
+//   Gpt m = Gpt::make(256, 64, 64, 4, 2, 1);   m.step(data, starts, lr, decay, clip);   m.write(prompt, n, temp, topk, seed)      // 0.7.0: a GPT that trains on the phone (bottom of this file)
 //   Tensor a = Tensor::zeros(2, 3);   a.set(0, 1, 5.0);   Tensor c = a.matmul(b);   Tensor p = c.relu().softmax();
 //   Network n = Network::make();   n.add(2, 8);   n.add(8, 1);                // layers of neurons: relu between them
 //   n.fit(x, y, 3000, 0.1);   Tensor out = n.predict(x);   n.save("m.jw");   Network m = Network::load("m.jw");
@@ -8,6 +9,34 @@
 #import <simd>
 #import <cpu>
 using cpu::thread;
+
+// exp and tanh in about 15 multiplications (Math::exp and Math::tanh take 100 ns each): exp(x) = (exp(x / 64) by a polynomial of degree 6) ^ 64; the relative error is
+// below 1e-4 for -30 < x < 30. tanh(x) = 1 - 2 / (exp(2x) + 1), with a series near 0 (no cancellation) and 1 beyond 9.
+double nt_exp(double x) {
+    if x < -60.0 { return 0.0; }
+    if x > 60.0 { x = 60.0; }
+    double y = x * 0.015625;
+    double r = 1.0 + y * (1.0 + y * (0.5 + y * (0.16666666666666666 + y * (0.041666666666666664 + y * (0.008333333333333333 + y * 0.001388888888888889)))));
+    r = r * r;
+    r = r * r;
+    r = r * r;
+    r = r * r;
+    r = r * r;
+    r = r * r;
+    return r;
+}
+
+double nt_tanh(double x) {
+    if x > 9.0 { return 1.0; }
+    if x < -9.0 { return -1.0; }
+    double a = x;
+    if a < 0.0 { a = 0.0 - a; }
+    if a < 0.05 { return x * (1.0 - x * x * 0.3333333333333333); }
+    double e = nt_exp(2.0 * a);
+    double t = 1.0 - 2.0 / (e + 1.0);
+    if x < 0.0 { return 0.0 - t; }
+    return t;
+}
 
 // ---- the fast way to multiply (neuron 0.2.0): the numbers are packed as float32 in rows of a multiple of 8, B is turned over so that every
 // result is a dot product of two rows (4 numbers at a time, no splat, two accumulators), and the rows of the result are shared among threads.
@@ -135,7 +164,7 @@ struct Tensor {
             for j in 0..self.cols { if self.d[i * self.cols + j] > m { m = self.d[i * self.cols + j]; } }
             double s = 0.0;
             for j in 0..self.cols {
-                double e = Math::exp(self.d[i * self.cols + j] - m);
+                double e = nt_exp(self.d[i * self.cols + j] - m);
                 r.d[i * self.cols + j] = e;
                 s += e;
             }
@@ -293,6 +322,46 @@ struct Network {
 // A node is an int (its number). g.value(n) is the Tensor32 of a node, g.grad(n) its gradient after backward.
 // ============================================================================================================================
 
+// c = a x b for small tables, n a multiple of 4: four columns of two rows at a time stay in registers while k runs (a function of its own with no calls, so
+// that the compiler keeps every vector in a register)
+void nt_mm_small(float^ ap, float^ bp, float^ cp, int m, int k, int n) {
+    int i = 0;
+    while i + 2 <= m {
+        int j = 0;
+        while j < n {
+            f32x4 c0 = {0.0, 0.0, 0.0, 0.0};
+            f32x4 c1 = {0.0, 0.0, 0.0, 0.0};
+            for kk in 0..k {
+                f32x4 bv = f32x4::load(bp, kk * n + j);
+                float a0 = ap[i * k + kk];
+                float a1 = ap[(i + 1) * k + kk];
+                f32x4 av0 = {a0, a0, a0, a0};
+                f32x4 av1 = {a1, a1, a1, a1};
+                c0 = c0 + av0 * bv;
+                c1 = c1 + av1 * bv;
+            }
+            c0.store(cp, i * n + j);
+            c1.store(cp, (i + 1) * n + j);
+            j += 4;
+        }
+        i += 2;
+    }
+    while i < m {
+        int j = 0;
+        while j < n {
+            f32x4 c0 = {0.0, 0.0, 0.0, 0.0};
+            for kk in 0..k {
+                float a0 = ap[i * k + kk];
+                f32x4 av0 = {a0, a0, a0, a0};
+                c0 = c0 + av0 * f32x4::load(bp, kk * n + j);
+            }
+            c0.store(cp, i * n + j);
+            j += 4;
+        }
+        i += 1;
+    }
+}
+
 struct Tensor32 {
     int[] shape;                       // 1 to 4 numbers, the last one is the width of a row
     float[] d;
@@ -393,7 +462,7 @@ struct Tensor32 {
             for j in 0..c { if (double)self.d[i * c + j] > mx { mx = (double)self.d[i * c + j]; } }
             double s = 0.0;
             for j in 0..c {
-                double e = Math::exp((double)self.d[i * c + j] - mx);
+                double e = nt_exp((double)self.d[i * c + j] - mx);
                 r.d[i * c + j] = (float)e;
                 s += e;
             }
@@ -414,7 +483,11 @@ struct Tensor32 {
         int k = self.cols();
         int n = o.cols();
         Tensor32 r = Tensor32::zeros(m, n);
-        if m * k * n < 32768 {
+        if m * k * n < 2500000 {
+            if n % 4 == 0 {
+                nt_mm_small(@self.d[0], @o.d[0], @r.d[0], m, k, n);
+                return r;
+            }
             for i in 0..m {
                 for kk in 0..k {
                     float a = self.d[i * k + kk];
@@ -450,6 +523,102 @@ struct Tensor32 {
         Sys::munmap((void^)pbt, sb);
         Sys::munmap((void^)pc, sc);
         return r;
+    }
+}
+
+// ---- attention kernels (dh = the width of a head, a multiple of 4): four numbers at a time, with no calls but the sum of four lanes
+// pr[(h * t + i) * t + j] = (q_i . k_j) * sc for j <= i, in every head
+void nt_att_scores(float^ q, float^ k, float^ pr, int t, int w, int heads, float sc) {
+    int dh = w / heads;
+    for h in 0..heads {
+        for i in 0..t {
+            for j in 0..i + 1 {
+                f32x4 acc = {0.0, 0.0, 0.0, 0.0};
+                int d = 0;
+                while d < dh {
+                    acc = acc + f32x4::load(q, i * w + h * dh + d) * f32x4::load(k, j * w + h * dh + d);
+                    d += 4;
+                }
+                pr[(h * t + i) * t + j] = acc.sum() * sc;
+            }
+        }
+    }
+}
+// out_i += p_ij * v_j (the probabilities pr are ready)
+void nt_att_out(float^ pr, float^ v, float^ out, int t, int w, int heads) {
+    int dh = w / heads;
+    for h in 0..heads {
+        for i in 0..t {
+            for j in 0..i + 1 {
+                float p = pr[(h * t + i) * t + j];
+                f32x4 pv = {p, p, p, p};
+                int d = 0;
+                while d < dh {
+                    int o = i * w + h * dh + d;
+                    f32x4 r = f32x4::load(out, o) + pv * f32x4::load(v, j * w + h * dh + d);
+                    r.store(out, o);
+                    d += 4;
+                }
+            }
+        }
+    }
+}
+// the gradients of q, k and v from the gradient dy of the output: dp_j = dy_i . v_j, ds_j = p_j (dp_j - sum p dp) * sc, dv_j += p_j dy_i, dq_i += ds_j k_j, dk_j += ds_j q_i
+// (dpb: room for t numbers). The pointers are in the globals nt_ab_*: a function with more than 8 parameters is not safe
+float^ nt_ab_q;
+float^ nt_ab_k;
+float^ nt_ab_v;
+float^ nt_ab_pr;
+float^ nt_ab_dy;
+float^ nt_ab_dq;
+float^ nt_ab_dk;
+float^ nt_ab_dv;
+float^ nt_ab_dpb;
+void nt_att_back(int t, int w, int heads, float sc) {
+    float^ q = nt_ab_q;
+    float^ k = nt_ab_k;
+    float^ v = nt_ab_v;
+    float^ pr = nt_ab_pr;
+    float^ dy = nt_ab_dy;
+    float^ dq = nt_ab_dq;
+    float^ dk = nt_ab_dk;
+    float^ dv = nt_ab_dv;
+    float^ dpb = nt_ab_dpb;
+    int dh = w / heads;
+    for h in 0..heads {
+        for i in 0..t {
+            float dot = 0.0;
+            for j in 0..i + 1 {
+                f32x4 acc = {0.0, 0.0, 0.0, 0.0};
+                int d = 0;
+                while d < dh {
+                    acc = acc + f32x4::load(dy, i * w + h * dh + d) * f32x4::load(v, j * w + h * dh + d);
+                    d += 4;
+                }
+                float dp = acc.sum();
+                dpb[j] = dp;
+                dot += pr[(h * t + i) * t + j] * dp;
+            }
+            for j in 0..i + 1 {
+                float p = pr[(h * t + i) * t + j];
+                float ds = p * (dpb[j] - dot) * sc;
+                f32x4 pv = {p, p, p, p};
+                f32x4 dsv = {ds, ds, ds, ds};
+                int d = 0;
+                while d < dh {
+                    int oi = i * w + h * dh + d;
+                    int oj = j * w + h * dh + d;
+                    f32x4 g = f32x4::load(dy, oi);
+                    f32x4 a1 = f32x4::load(dv, oj) + pv * g;
+                    a1.store(dv, oj);
+                    f32x4 a2 = f32x4::load(dq, oi) + dsv * f32x4::load(k, oj);
+                    a2.store(dq, oi);
+                    f32x4 a3 = f32x4::load(dk, oj) + dsv * f32x4::load(q, oi);
+                    a3.store(dk, oj);
+                    d += 4;
+                }
+            }
+        }
     }
 }
 
@@ -496,6 +665,7 @@ struct Graph {
     int keep;                          // the nodes before mark(): the parameters
     Tensor32[] m;                      // AdamW: the first and second moments of every parameter (made at the first adamw call)
     Tensor32[] v;
+    Tensor32[] acc;                    // the sum of the gradients of several sequences (a batch), one table per node (made by acc_add)
     int steps;                         // AdamW steps done
     double b1t;                        // beta1 ^ steps
     double b2t;
@@ -518,6 +688,7 @@ struct Graph {
         g.keep = 0;
         g.m = arr(4);
         g.v = arr(4);
+        g.acc = arr(4);
         g.steps = 0;
         g.b1t = 1.0;
         g.b2t = 1.0;
@@ -566,12 +737,12 @@ struct Graph {
     int relu(self, int a) { return self.node(OP_RELU(), a, -1, self.val[a].relu()); }
     int tanh(self, int a) {
         Tensor32 r = Tensor32::make(self.val[a].shape);
-        for i in 0..r.d.len { r.d[i] = (float)Math::tanh((double)self.val[a].d[i]); }
+        for i in 0..r.d.len { r.d[i] = (float)nt_tanh((double)self.val[a].d[i]); }
         return self.node(OP_TANH(), a, -1, r);
     }
     int sigmoid(self, int a) {
         Tensor32 r = Tensor32::make(self.val[a].shape);
-        for i in 0..r.d.len { r.d[i] = (float)(1.0 / (1.0 + Math::exp(0.0 - (double)self.val[a].d[i]))); }
+        for i in 0..r.d.len { r.d[i] = (float)(1.0 / (1.0 + nt_exp(0.0 - (double)self.val[a].d[i]))); }
         return self.node(OP_SIGMOID(), a, -1, r);
     }
 
@@ -590,7 +761,7 @@ struct Graph {
         Tensor32 r = Tensor32::make(self.val[a].shape);
         for i in 0..r.d.len {
             double x = (double)self.val[a].d[i];
-            r.d[i] = (float)(0.5 * x * (1.0 + Math::tanh(0.7978845608 * (x + 0.044715 * x * x * x))));
+            r.d[i] = (float)(0.5 * x * (1.0 + nt_tanh(0.7978845608 * (x + 0.044715 * x * x * x))));
         }
         return self.node(OP_GELU(), a, -1, r);
     }
@@ -598,7 +769,7 @@ struct Graph {
         Tensor32 r = Tensor32::make(self.val[a].shape);
         for i in 0..r.d.len {
             double x = (double)self.val[a].d[i];
-            r.d[i] = (float)(x / (1.0 + Math::exp(0.0 - x)));
+            r.d[i] = (float)(x / (1.0 + nt_exp(0.0 - x)));
         }
         return self.node(OP_SILU(), a, -1, r);
     }
@@ -663,6 +834,28 @@ struct Graph {
         double sc = 1.0 / Math::sqrt((double)dh);
         Tensor32 out = Tensor32::zeros(t, w);
         Tensor32 pr = Tensor32::zeros(heads * t, t);
+        if dh % 4 == 0 {
+            nt_att_scores(@self.val[q].d[0], @self.val[k].d[0], @pr.d[0], t, w, heads, (float)sc);
+            for hi in 0..heads * t {                                     // the softmax of every row, over the places 0 .. i
+                int row = hi % t;
+                float mx = pr.d[hi * t];
+                for j in 1..row + 1 { if pr.d[hi * t + j] > mx { mx = pr.d[hi * t + j]; } }
+                double z = 0.0;
+                for j in 0..row + 1 {
+                    double e = nt_exp((double)pr.d[hi * t + j] - (double)mx);
+                    pr.d[hi * t + j] = (float)e;
+                    z += e;
+                }
+                float iz = (float)(1.0 / z);
+                for j in 0..row + 1 { pr.d[hi * t + j] = pr.d[hi * t + j] * iz; }
+            }
+            nt_att_out(@pr.d[0], @self.val[v].d[0], @out.d[0], t, w, heads);
+            int fast = self.node(OP_ATTENTION(), q, k, out);
+            self.pc[fast] = v;
+            self.iarg[fast] = heads;
+            self.target[fast] = pr;
+            return fast;
+        }
         for h in 0..heads {
             for i in 0..t {
                 double mx = -1.0e30;
@@ -675,7 +868,7 @@ struct Graph {
                 }
                 double z = 0.0;
                 for j in 0..i + 1 {
-                    double e = Math::exp((double)pr.d[(h * t + i) * t + j] - mx);
+                    double e = nt_exp((double)pr.d[(h * t + i) * t + j] - mx);
                     pr.d[(h * t + i) * t + j] = (float)e;
                     z += e;
                 }
@@ -850,7 +1043,7 @@ struct Graph {
                     for k in 0..g.d.len {
                         double x = (double)self.val[a].d[k];
                         double u = 0.7978845608 * (x + 0.044715 * x * x * x);
-                        double th = Math::tanh(u);
+                        double th = nt_tanh(u);
                         double du = 0.7978845608 * (1.0 + 3.0 * 0.044715 * x * x);
                         g.d[k] = (float)((double)dy.d[k] * (0.5 * (1.0 + th) + 0.5 * x * (1.0 - th * th) * du));
                     }
@@ -859,7 +1052,7 @@ struct Graph {
                     Tensor32 g = Tensor32::make(dy.shape);
                     for k in 0..g.d.len {
                         double x = (double)self.val[a].d[k];
-                        double sg = 1.0 / (1.0 + Math::exp(0.0 - x));
+                        double sg = 1.0 / (1.0 + nt_exp(0.0 - x));
                         g.d[k] = (float)((double)dy.d[k] * sg * (1.0 + x * (1.0 - sg)));
                     }
                     self.give(a, g);
@@ -902,6 +1095,12 @@ struct Graph {
                     Tensor32 dq = Tensor32::zeros(t, w);
                     Tensor32 dk = Tensor32::zeros(t, w);
                     Tensor32 dv = Tensor32::zeros(t, w);
+                    if dh % 4 == 0 {
+                        Tensor32 dpb = Tensor32::zeros(1, t);
+                        nt_ab_q = @self.val[a].d[0]; nt_ab_k = @self.val[b].d[0]; nt_ab_v = @self.val[vv].d[0]; nt_ab_pr = @self.target[i].d[0];
+                        nt_ab_dy = @dy.d[0]; nt_ab_dq = @dq.d[0]; nt_ab_dk = @dk.d[0]; nt_ab_dv = @dv.d[0]; nt_ab_dpb = @dpb.d[0];
+                        nt_att_back(t, w, heads, (float)sc);
+                    } else {
                     for h in 0..heads {
                         for r in 0..t {
                             double dot = 0.0;                                   // sum over j of P_rj * dP_rj
@@ -922,6 +1121,7 @@ struct Graph {
                                 }
                             }
                         }
+                    }
                     }
                     self.give(a, dq);
                     self.give(b, dk);
@@ -1088,6 +1288,30 @@ struct Graph {
         return true;
     }
 
+    // a batch of several sequences: after each backward() call acc_add() to keep the gradients of the parameters; at the end acc_apply(1 / batch)
+    // puts the mean into the gradients, and clip / adamw / sgd work as usual
+    void acc_add(self) {
+        while self.acc.len < self.keep { self.acc.push(Tensor32::zeros(1, 1)); }
+        for n in 0..self.keep {
+            if self.op[n] == OP_PARAM() && self.grad[n].d.len == self.val[n].d.len {
+                if self.acc[n].d.len != self.val[n].d.len { self.acc[n] = Tensor32::make(self.val[n].shape); }
+                for k in 0..self.val[n].d.len { self.acc[n].d[k] += self.grad[n].d[k]; }
+            }
+        }
+    }
+    void acc_apply(self, double scale) {
+        float f = (float)scale;
+        for n in 0..self.keep {
+            if self.op[n] == OP_PARAM() && n < self.acc.len && self.acc[n].d.len == self.val[n].d.len {
+                if self.grad[n].d.len != self.val[n].d.len { self.grad[n] = Tensor32::make(self.val[n].shape); }
+                for k in 0..self.val[n].d.len {
+                    self.grad[n].d[k] = self.acc[n].d[k] * f;
+                    self.acc[n].d[k] = 0.0;
+                }
+            }
+        }
+    }
+
     // plain gradient descent on the parameters (the first `keep` nodes that are parameters)
     void sgd(self, double rate) {
         float r = (float)rate;
@@ -1124,6 +1348,218 @@ struct Sched {
         double p = (double)(step - warm) / (double)(total - warm);
         if p > 1.0 { p = 1.0; }
         return low + (base - low) * 0.5 * (1.0 + Math::cos(3.141592653589793 * p));
+    }
+}
+
+// ============================================================================================================================
+// Gpt: a GPT language model that trains on the phone (neuron 0.7.0). Build it, train it on a text, write with it, save and load it.
+//   Gpt m = Gpt::make(256, 64, 64, 4, 2, 1);                  // vocab, context, width, heads, layers, seed
+//   int[] data = Gpt::bytes(text);                            // a text as numbers 0-255 (byte level: no tokenizer needed)
+//   int[] starts = arr(8); ... starts.push(position in data) ... // each start is the beginning of one training sequence of m.ctx + 1 numbers
+//   double loss = m.step(data, starts, 0.003, 0.01, 1.0);     // one step on a batch: mean loss; learning rate, weight decay, clip of the gradient
+//   String text = m.write(Gpt::bytes("Once"), 100, 0.8, 20, 1);   // 100 new tokens: temperature, top-k (0 = off), seed
+//   m.save("model.gpt");   Gpt n = Gpt::load("model.gpt");    // the weights (text) and the sizes (model.gpt.cfg)
+// The model: embeddings of tokens and positions, then `layers` blocks (RMS norm, causal multi-head attention, RMS norm, GELU feed-forward 4 times as wide, residual
+// connections), a last RMS norm and a linear layer to the vocabulary. The Graph above does the gradients; AdamW does the learning. The program that uses it
+// is the tool `neuron` (neuron gpt train FILE) and examples/train_gpt.jk.
+// ============================================================================================================================
+
+struct Gpt {
+    Graph g;
+    int vocab;
+    int ctx;
+    int d;
+    int heads;
+    int layers;
+    int emb;
+    int pos;
+    int gfin;
+    Linear head;
+    Linear[] wq;
+    Linear[] wk;
+    Linear[] wv;
+    Linear[] wo;
+    Linear[] up;
+    Linear[] down;
+    int[] gain1;
+    int[] gain2;
+    int rng;
+
+    // a new model with random weights (the same seed gives the same model)
+    static Gpt make(int vocab, int ctx, int d, int heads, int layers, int seed) {
+        Gpt m;
+        m.g = Graph::make();
+        m.vocab = vocab; m.ctx = ctx; m.d = d; m.heads = heads; m.layers = layers;
+        m.emb = m.g.param(Tensor32::random(vocab, d, seed, 0.1));
+        m.pos = m.g.param(Tensor32::random(ctx, d, seed + 1, 0.1));
+        Tensor32 ones = Tensor32::zeros(1, d);
+        for k in 0..d { ones.d[k] = 1.0; }
+        m.gfin = m.g.param(ones.copy());
+        m.wq = arr(layers + 1); m.wk = arr(layers + 1); m.wv = arr(layers + 1); m.wo = arr(layers + 1);
+        m.up = arr(layers + 1); m.down = arr(layers + 1);
+        m.gain1 = arr(layers + 1); m.gain2 = arr(layers + 1);
+        for l in 0..layers {
+            m.gain1.push(m.g.param(ones.copy()));
+            m.gain2.push(m.g.param(ones.copy()));
+            m.wq.push(m.g.linear(d, d, seed + 10 + l * 8));
+            m.wk.push(m.g.linear(d, d, seed + 11 + l * 8));
+            m.wv.push(m.g.linear(d, d, seed + 12 + l * 8));
+            m.wo.push(m.g.linear(d, d, seed + 13 + l * 8));
+            m.up.push(m.g.linear(d, 4 * d, seed + 14 + l * 8));
+            m.down.push(m.g.linear(4 * d, d, seed + 15 + l * 8));
+        }
+        m.head = m.g.linear(d, vocab, seed + 5);
+        m.g.mark();
+        m.rng = seed * 2654435761 + 88172645463325252;
+        if m.rng == 0 { m.rng = 1; }
+        return m;
+    }
+
+    // a text as byte numbers
+    static int[] bytes(String text) {
+        int[] r = arr(text.len + 1);
+        for i in 0..text.len { r.push(text[i] & 255); }
+        return r;
+    }
+    // byte numbers as a text
+    static String text_of(int[] ids) {
+        String s = "";
+        for i in 0..ids.len { s.push((char)ids[i]); }
+        return s;
+    }
+
+    // the scores of the next token at every position of ids (a node: ids.len rows of vocab numbers)
+    int forward(self, int[] ids) {
+        int t = ids.len;
+        int[] pids = arr(t + 1);
+        for i in 0..t { pids.push(i); }
+        int x = self.g.add(self.g.embed(self.emb, ids), self.g.embed(self.pos, pids));
+        for l in 0..self.layers {
+            int n1 = self.g.rms_norm(x, self.gain1[l]);
+            int att = self.g.attention(self.g.apply(self.wq[l], n1), self.g.apply(self.wk[l], n1), self.g.apply(self.wv[l], n1), self.heads);
+            x = self.g.add(x, self.g.apply(self.wo[l], att));
+            int n2 = self.g.rms_norm(x, self.gain2[l]);
+            x = self.g.add(x, self.g.apply(self.down[l], self.g.gelu(self.g.apply(self.up[l], n2))));
+        }
+        return self.g.apply(self.head, self.g.rms_norm(x, self.gfin));
+    }
+
+    // one learning step on a batch: every start in `starts` is the beginning of a sequence of ctx + 1 numbers in data (the first ctx are the input, the
+    // next token at every place is the answer). The gradients of the sequences are averaged; clip: the biggest size of the gradient (0 = no clip).
+    // Returns the mean loss of the batch.
+    double step(self, int[] data, int[] starts, double lr, double decay, double clip) {
+        double total = 0.0;
+        for q in 0..starts.len {
+            int s = starts[q];
+            int[] inp = arr(self.ctx + 1);
+            int[] want = arr(self.ctx + 1);
+            for i in 0..self.ctx { inp.push(data[s + i]); want.push(data[s + i + 1]); }
+            int loss = self.g.softmax_ce(self.forward(inp), want);
+            total += (double)self.g.value(loss).d[0];
+            self.g.backward(loss);
+            self.g.acc_add();
+            self.g.clear();
+        }
+        self.g.acc_apply(1.0 / (double)starts.len);
+        if clip > 0.0 { self.g.clip(clip); }
+        self.g.adamw(lr, decay);
+        return total / (double)starts.len;
+    }
+
+    // the mean loss on sequences (no learning): for a check on text the model has not seen
+    double loss_on(self, int[] data, int[] starts) {
+        double total = 0.0;
+        for q in 0..starts.len {
+            int s = starts[q];
+            int[] inp = arr(self.ctx + 1);
+            int[] want = arr(self.ctx + 1);
+            for i in 0..self.ctx { inp.push(data[s + i]); want.push(data[s + i + 1]); }
+            int loss = self.g.softmax_ce(self.forward(inp), want);
+            total += (double)self.g.value(loss).d[0];
+            self.g.clear();
+        }
+        return total / (double)starts.len;
+    }
+
+    int next_rand(self) {
+        int x = self.rng;
+        x = x xor (x << 13);
+        x = x xor ((x >> 7) & 72057594037927935);
+        x = x xor (x << 17);
+        self.rng = x;
+        return x & 2147483647;
+    }
+
+    // the next token after the numbers in ids (the last ctx of them are used): temperature 0 = the best; top_k 0 = any
+    int next_token(self, int[] ids, double temp, int top_k) {
+        int[] inp = arr(self.ctx + 1);
+        int from = ids.len - self.ctx;
+        if from < 0 { from = 0; }
+        for i in from..ids.len { inp.push(ids[i]); }
+        Tensor32 sc = self.g.value(self.forward(inp));
+        int row = (inp.len - 1) * self.vocab;
+        self.g.clear();
+        int best = 0;
+        for c in 1..self.vocab { if sc.d[row + c] > sc.d[row + best] { best = c; } }
+        if temp <= 0.0 { return best; }
+        // the candidates: the top_k best (or all), a softmax with the temperature, one drawn by chance
+        int m = self.vocab;
+        if top_k > 0 && top_k < m { m = top_k; }
+        int[] cand = arr(m + 1);
+        float[] val = arr(m + 1);
+        for i in 0..self.vocab {
+            float v = sc.d[row + i];
+            if cand.len < m {
+                cand.push(i); val.push(v);
+                int k = cand.len - 1;
+                while k > 0 && val[k] > val[k - 1] { float tv = val[k]; val[k] = val[k - 1]; val[k - 1] = tv; int ti = cand[k]; cand[k] = cand[k - 1]; cand[k - 1] = ti; k -= 1; }
+            } else if v > val[m - 1] {
+                val[m - 1] = v; cand[m - 1] = i;
+                int k = m - 1;
+                while k > 0 && val[k] > val[k - 1] { float tv = val[k]; val[k] = val[k - 1]; val[k - 1] = tv; int ti = cand[k]; cand[k] = cand[k - 1]; cand[k - 1] = ti; k -= 1; }
+            }
+        }
+        double mx = (double)val[0];
+        double z = 0.0;
+        double[] pr = arr(m + 1);
+        for i in 0..m { double e = Math::exp(((double)val[i] - mx) / temp); pr.push(e); z += e; }
+        double r = (double)(self.next_rand() % 1000000) / 1000000.0 * z;
+        double acc = 0.0;
+        for i in 0..m { acc += pr[i]; if r < acc { return cand[i]; } }
+        return cand[m - 1];
+    }
+
+    // `count` new tokens after the prompt (byte numbers); the text of the new ones
+    String write(self, int[] prompt, int count, double temp, int top_k, int seed) {
+        self.rng = seed * 2654435761 + 88172645463325252;
+        if self.rng == 0 { self.rng = 1; }
+        int[] ids = arr(prompt.len + count + 1);
+        for i in 0..prompt.len { ids.push(prompt[i]); }
+        int[] fresh = arr(count + 1);
+        for k in 0..count {
+            int t = self.next_token(ids, temp, top_k);
+            ids.push(t);
+            fresh.push(t);
+        }
+        return Gpt::text_of(fresh);
+    }
+
+    // the weights go to `path`, the sizes to `path.cfg`
+    bool save(self, String path) {
+        String cfg = "gpt 1 " + str(self.vocab) + " " + str(self.ctx) + " " + str(self.d) + " " + str(self.heads) + " " + str(self.layers) + "\n";
+        Result<int, Error> r = Fs::write_text(path + ".cfg", cfg);
+        if !r.is_ok() { return false; }
+        return self.g.save(path);
+    }
+    // a model from a file written by save (a Gpt with vocab 0 when the files cannot be read)
+    static Gpt load(String path) {
+        Result<String, Error> r = Fs::read_text(path + ".cfg");
+        if !r.is_ok() { return Gpt::make(1, 1, 8, 1, 1, 1); }
+        String[] w = r.take().trim().split(" ");
+        if w.len < 7 || w[0] != "gpt" { return Gpt::make(1, 1, 8, 1, 1, 1); }
+        Gpt m = Gpt::make(w[2].to_int(), w[3].to_int(), w[4].to_int(), w[5].to_int(), w[6].to_int(), 1);
+        if !m.g.load(path) { return Gpt::make(1, 1, 8, 1, 1, 1); }
+        return m;
     }
 }
 

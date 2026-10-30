@@ -142,3 +142,23 @@ int p = g.maxpool(c, 4, 8, 8, 2);                                        // the 
 int loss = g.softmax_ce(g.apply(fc, p), classes);
 ```
 The gradients of both are checked numerically (the weights, the bias and the input); a small network (conv, relu, maxpool, linear) separates three kinds of 8x8 pictures (a horizontal bar, a vertical bar, a diagonal in noise) with 60 of 60 right after 120 steps.
+
+
+## 0.7.0: `Gpt`, a language model that trains on the phone
+A GPT language model that trains on the phone: build it, train it on a text, write with it, save and load it. It is part of `neuron` (`#import <neuron>`). The ready-made program is the tool `neuron` (`neuron gpt train notes.txt`, see Jcmp-Tools); this page is for using it from your own programs. `examples/train_gpt.jk` is a complete training program.
+
+```jk
+#import <neuron>
+Gpt m = Gpt::make(256, 64, 64, 4, 2, 1);          // vocab (256 = bytes), context, width, heads, layers, seed
+int[] data = Gpt::bytes(text);                     // a text as numbers 0-255 (byte level: no tokenizer, Thai and code work)
+int[] starts = arr(8);                             // each start is the place in data where one training sequence of ctx + 1 numbers begins
+for q in 0..8 { starts.push(random place); }
+double loss = m.step(data, starts, 0.003, 0.01, 1.0);   // one step on a batch: learning rate, weight decay, clip of the gradient; returns the mean loss
+double check = m.loss_on(data, some_other_starts);       // the loss on text the model never learned from (no learning)
+String more = m.write(Gpt::bytes("Once"), 100, 0.8, 20, 1);   // 100 new tokens: temperature (0 = the most likely), top-k (0 = any), seed
+m.save("model.gpt");  Gpt n = Gpt::load("model.gpt");    // the weights as text and the sizes in model.gpt.cfg
+```
+* The model: embeddings of tokens and of positions, `layers` blocks (RMS norm, causal multi-head attention, RMS norm, a GELU feed-forward 4 times as wide, residual connections), a last RMS norm and a linear layer to the vocabulary. The width of a head (`d / heads`) must be a multiple of 4.
+* A step goes over every sequence of the batch one after the other and averages the gradients (`Graph.acc_add` / `acc_apply`), then clips and applies AdamW. Use `Sched::cosine(step, total, warm, lr, low)` for the learning rate.
+* Speed on a Kirin 990 (batch 8, context 64, width 64, 2 layers, 0.14 M numbers): about 290 ms a step. `size=medium` (1 M numbers) takes seconds.
+* `Gpt::load` gives a model with vocab 1 when the files cannot be read (check `m.vocab`).
