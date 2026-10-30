@@ -11,7 +11,7 @@ glapp 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gla
 glcanvas 0.2.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/glcanvas.j b8eab77826eafae8b5861cba6eba773f597895d4c93f22408daaa16704afd44d
 gpu 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gpu.j d2dd662c04381b21f0de3437aefad1c9a9c212c25278cfb2dea78ab095b5d680
 jobs 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/jobs.j f4ecdad5c02fc5f8b5aa0ac29e2e8dffd91d3392fbc7e07fda7eafb15b571c18
-llama 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/llama.j a1635f160aabafbc392fc01e7370d5090db32691b6fdaeb4fee5fa2fbfa7dd8b
+llama 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/llama.j e2af9e96c2df55a889822c2215f634e2fee50b5b3b2e612e11f78b86d7560328
 # NAME is letters, digits and _ only. The library is one J2K source file (NAME.j). SHA256 is the checksum of that file.
 native 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/native.j 89be83affdd06e4e051e8a6eceb4f52a6d182d69f74204bd3c5742c72c127893
 neuron 0.5.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neuron.j abd2785c9e62a8270d8f0343dbd6f77f493c354cf202cb70c50acd1a6c7c0c14

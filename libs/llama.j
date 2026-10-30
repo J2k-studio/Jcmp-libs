@@ -1,4 +1,4 @@
-// llama 0.1.0 -- runs Llama-style language models from GGUF files on the phone (CPU): the forward pass, a SentencePiece tokenizer, sampling.   #import <llama>   (needs <gguf>; license: MPL-2.0)
+// llama 0.1.1 -- runs Llama-style language models from GGUF files on the phone (CPU): the forward pass, a SentencePiece tokenizer, sampling.   #import <llama>   (needs <gguf>; license: MPL-2.0)
 //   switch Lm::load("stories15M-q4_0.gguf") {
 //       Result::Ok(m): {
 //           int[] ids = m.encode("Once upon a time");              // token numbers (with the start token)
@@ -13,27 +13,34 @@
 
 #import <gguf>
 
-// y = W x for a table W of rows x cols and a vector x of cols numbers (four sums at a time)
+// y = W x for a table W of rows x cols and a vector x of cols numbers: four numbers at a time (NEON), two sums, when cols is a multiple of 8
 float[] llama_mv(Tensor32 w, float[] x) {
     int rows = w.shape[0];
     int cols = w.shape[1];
     float[] y = arr(rows + 1);
+    if cols % 8 == 0 {
+        float^ wp = @w.d[0];
+        float^ xp = @x[0];
+        for j in 0..rows {
+            int o = j * cols;
+            f32x4 s0 = {0.0, 0.0, 0.0, 0.0};
+            f32x4 s1 = {0.0, 0.0, 0.0, 0.0};
+            int i = 0;
+            while i < cols {
+                s0 = s0 + f32x4::load(wp, o + i) * f32x4::load(xp, i);
+                s1 = s1 + f32x4::load(wp, o + i + 4) * f32x4::load(xp, i + 4);
+                i += 8;
+            }
+            f32x4 s = s0 + s1;
+            y.push(s.sum());
+        }
+        return y;
+    }
     for j in 0..rows {
         int o = j * cols;
         float s0 = 0.0;
-        float s1 = 0.0;
-        float s2 = 0.0;
-        float s3 = 0.0;
-        int i = 0;
-        while i + 4 <= cols {
-            s0 += w.d[o + i] * x[i];
-            s1 += w.d[o + i + 1] * x[i + 1];
-            s2 += w.d[o + i + 2] * x[i + 2];
-            s3 += w.d[o + i + 3] * x[i + 3];
-            i += 4;
-        }
-        while i < cols { s0 += w.d[o + i] * x[i]; i += 1; }
-        y.push(s0 + s1 + s2 + s3);
+        for i in 0..cols { s0 += w.d[o + i] * x[i]; }
+        y.push(s0);
     }
     return y;
 }
