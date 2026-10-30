@@ -17,6 +17,7 @@ gpu 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gpu.j
 jai 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/jai.j 4994fd130a2422b84bc67c853ccae2bd3300ac33e7fd62a3e1d48a528b4a29e4
 jobs 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/jobs.j f4ecdad5c02fc5f8b5aa0ac29e2e8dffd91d3392fbc7e07fda7eafb15b571c18
 llama 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/llama.j f36cf2b8712fdd7ed2d75426d11d6dca367f3479a09a65c4ad819155183e7311
+mlp 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/mlp.j 711dc1b040d930a657145f6e98b223efab56e8d165ade293c0ac2f58bc38d655
 native 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/native.j 89be83affdd06e4e051e8a6eceb4f52a6d182d69f74204bd3c5742c72c127893
 neuron 0.7.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neuron.j 63ec604a38a8da5ebd8cdad786e6bdeaa60aa8c992694b4ad3cfbeeec978f99f
 neurongpu 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neurongpu.j ad3f617ceee7e2fe8104e3d3af7a217bfc365c7b1885d46b1dd5cfc759cdb3a5

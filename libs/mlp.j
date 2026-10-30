@@ -1,18 +1,18 @@
-// jai 0.1.0 -- train a small network in a few lines (on top of <neuron>).   #import <jai>
+// mlp 0.1.0 -- train a small network in a few lines (on top of <neuron>).   #import <mlp>
 //   int[] sizes = arr(3);  sizes.push(2); sizes.push(16); sizes.push(1);
-//   Jai net = Jai::mlp(sizes, Jai::TANH(), 1);                  // layers 2 -> 16 -> 1; the activation between them; the seed
+//   Mlp net = Mlp::make(sizes, Mlp::TANH(), 1);                  // layers 2 -> 16 -> 1; the activation between them; the seed
 //   net.fit(x, y, 300, 0.01);                                   // x: Tensor32 (rows of inputs), y: Tensor32 (rows of outputs); 300 epochs, learning rate
 //   Tensor32 p = net.predict(x);                                // the outputs
 //   double e = net.loss_on(x, y);                               // the mean squared error
 // For classes (the last layer gives one number for each class, the labels are 0 .. classes - 1):
-//   Jai c = Jai::mlp(sizes, Jai::RELU(), 1);   c.fit_classes(x, labels, 100, 0.01);   double a = c.accuracy(x, labels);   int k = c.classify_row(x, 0);
-//   net.save("net.jai");   Jai m = Jai::load("net.jai");
+//   Mlp c = Mlp::make(sizes, Mlp::RELU(), 1);   c.fit_classes(x, labels, 100, 0.01);   double a = c.accuracy(x, labels);   int k = c.classify_row(x, 0);
+//   net.save("net.mlp");   Mlp m = Mlp::load("net.mlp");
 // Settings (change a field before fit): net.batch (rows in a step, 32), net.decay (weight decay of AdamW, 0.0), net.clip (largest gradient norm, 5.0),
 // net.every (print the loss every this many epochs, 0 = silent, the default), net.cosine (1: the learning rate falls along a cosine to a tenth).
 // fit returns the last loss; net.history has the loss of every epoch. The rows are shuffled in every epoch.
 #import <neuron>
 
-struct Jai {
+struct Mlp {
     Graph g;
     Linear[] layers;
     int[] sizes;
@@ -30,8 +30,8 @@ struct Jai {
     static int SIGMOID() { return 2; }
     static int GELU() { return 3; }
 
-    static Jai mlp(int[] sizes, int act, int seed) {
-        Jai n;
+    static Mlp make(int[] sizes, int act, int seed) {
+        Mlp n;
         n.g = Graph::make();
         n.layers = arr(8);
         n.sizes = arr(sizes.len + 1);
@@ -168,7 +168,7 @@ struct Jai {
         return false;
     }
 
-    static Jai load(String path) {
+    static Mlp load(String path) {
         int[] sizes = arr(8);
         int act = 0;
         switch Fs::read_text(path + ".cfg") {
@@ -180,7 +180,7 @@ struct Jai {
             }
             Result::Err(e): { }
         }
-        Jai j = Jai::mlp(sizes, act, 1);
+        Mlp j = Mlp::make(sizes, act, 1);
         j.g.load(path);
         return j;
     }
