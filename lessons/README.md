@@ -15,6 +15,7 @@ One lesson per library: a table of the syntax it adds, programs that compile and
 * [profile](profile.md) - Lesson: `<profile>` - where does the time go?
 * [qr](qr.md) - Lesson: `<qr>` - reading QR codes from a picture
 * [quat](quat.md) - Lesson: `<quat>` - turning things in 3D
+* [retrieve](retrieve.md) - Lesson: `<retrieve>` - find the right page in your own notes
 * [simd](simd.md) - Lesson: `<simd>` - four numbers in one step
 * [stats](stats.md) - Lesson: `<stats>` - numbers about numbers
 * [telegram](telegram.md) - Lesson: `<telegram>` - a bot that answers

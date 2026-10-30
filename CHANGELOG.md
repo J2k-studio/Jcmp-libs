@@ -1,5 +1,9 @@
 # Jcmp-libs changelog (what changed in the libraries, newest first)
 
+## retrieve 0.1.0 (2026-10-30)
+* **Added:** `<retrieve>`: BM25 search over passages of text (`add`, `build`, `search`), English and Thai (pairs of characters for text without spaces). The tool `ask` is built on it.
+* **Fixed:** none.
+
 ## neurongpu 0.1.0, neuron 0.7.1 (2026-10-30)
 * **Added:** `<neurongpu>`: `NeuronGpu::enable(min_work)` sends the products of `Tensor32.matmul` (so `Graph.matmul`, `Linear`, `Gpt`) with `m * k * n >= min_work` to the GPU (a compute shader, any shape); without a GPU it returns false and nothing changes. On a Kirin 990 it is 1.5 times faster at 256 x 256 and 2.4 times at 512 x 512; below 128 the CPU is as fast or faster. `neuron` has the hook for it (`nt_gpu_fn`).
 * **Fixed:** none.
