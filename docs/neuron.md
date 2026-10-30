@@ -123,3 +123,12 @@ for epoch in 0..150 {
 g.save("model.txt");   g.load("model.txt");     // the parameters as text; load needs a graph with the same parameters (same order and shapes)
 ```
 `Sched::cosine(step, total, warm, base, low)`. `adamw(lr, decay)` uses beta 0.9 / 0.999 and keeps its moving averages in the graph. `g.sgd(lr)` is still there. Tested on two rings of points (a network of 12 tanh units reaches over 95 percent).
+
+## 0.5.0: layers for text, and a nano GPT
+New nodes of `Graph` (each has a gradient that is checked against a numeric difference in the tests):
+* `embed(table, ids)`: one row of the table (a parameter of vocab x width) for every token number in `ids`.
+* `gelu(x)`, `silu(x)`.
+* `layer_norm(x, gain, bias)` and `rms_norm(x, gain)`: every row is normalised; gain and bias are parameters of one row.
+* `attention(q, k, v, heads)`: causal self-attention of one sequence (one row per position; the width is split into `heads` equal parts; a position sees only itself and the earlier ones).
+
+`examples/nano_gpt.jk` is a small GPT (embeddings, rms norm, 2-head attention, a GELU feed-forward, residual connections) with the usual training loop (AdamW, cosine schedule, clip): it learns a tiny text in about 5 seconds on a phone (500 steps) and writes it back one character at a time. Convolutions and pooling (for images) are next; so are loading real models (GGUF) and faster kernels.

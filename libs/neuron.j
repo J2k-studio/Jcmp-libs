@@ -1,4 +1,4 @@
-// neuron 0.4.0 -- tensors and small neural networks that train on the phone.   #import <neuron>   (needs jcmp 1.1.0.0; license: MPL-2.0)
+// neuron 0.5.0 -- tensors and small neural networks that train on the phone.   #import <neuron>   (needs jcmp 1.1.0.0; license: MPL-2.0)
 // 0.2.0: Tensor::matmul_fast(o): float32 + NEON dot products + threads for big tables (see the fast way below)
 //   Tensor a = Tensor::zeros(2, 3);   a.set(0, 1, 5.0);   Tensor c = a.matmul(b);   Tensor p = c.relu().softmax();
 //   Network n = Network::make();   n.add(2, 8);   n.add(8, 1);                // layers of neurons: relu between them
@@ -282,7 +282,7 @@ struct Network {
 }
 
 // ============================================================================================================================
-// neuron 0.4.0: Tensor32 (float32, up to 4 dimensions) and Graph (autograd with a tape). The old Tensor / Network above stay as they are.
+// neuron 0.5.0: Tensor32 (float32, up to 4 dimensions) and Graph (autograd with a tape). The old Tensor / Network above stay as they are.
 //   Graph g = Graph::make();
 //   int w = g.param(Tensor32::random(2, 8, 1, 0.5));   int b = g.param(Tensor32::zeros(1, 8));      // parameters live as long as the graph
 //   g.mark();                                                                                      // everything made after mark() is one step
@@ -464,6 +464,12 @@ int OP_TANH() { return 6; }
 int OP_SIGMOID() { return 7; }
 int OP_MSE() { return 8; }
 int OP_SOFTMAX_CE() { return 9; }
+int OP_EMBED() { return 10; }
+int OP_GELU() { return 11; }
+int OP_SILU() { return 12; }
+int OP_LAYER_NORM() { return 13; }
+int OP_RMS_NORM() { return 14; }
+int OP_ATTENTION() { return 15; }
 
 // the two parameters of a layer (node numbers of the graph that made it)
 struct Linear {
@@ -477,8 +483,13 @@ struct Graph {
     int[] op;
     int[] pa;                          // the first parent (a node number, -1 for none)
     int[] pb;
-    int[] label;                       // the class numbers of the last softmax_ce (the target of that node)
-    Tensor32[] target;                 // the target table of an mse node (a dummy for the others)
+    int[] pc;                          // the third parent (attention), -1 for none
+    int[] iarg;                        // a number of the node (attention: the number of heads)
+    int[] aux;                         // whole numbers of the nodes (class numbers, embedding ids), one run per node
+    int[] aux_off;                     // where the run of a node starts in aux
+    int aux_keep;                      // the length of aux at mark()
+    Tensor32[] target;                 // the target table of an mse node, the probabilities of softmax_ce / attention, the normalised x of a norm
+    Tensor32[] extra;                  // a second table of a node (the 1/sigma of every row of a norm)
     int count;                         // the nodes now
     int keep;                          // the nodes before mark(): the parameters
     Tensor32[] m;                      // AdamW: the first and second moments of every parameter (made at the first adamw call)
@@ -494,8 +505,13 @@ struct Graph {
         g.op = arr(64);
         g.pa = arr(64);
         g.pb = arr(64);
-        g.label = arr(1);
+        g.pc = arr(64);
+        g.iarg = arr(64);
+        g.aux = arr(64);
+        g.aux_off = arr(64);
+        g.aux_keep = 0;
         g.target = arr(64);
+        g.extra = arr(64);
         g.count = 0;
         g.keep = 0;
         g.m = arr(4);
@@ -511,14 +527,18 @@ struct Graph {
         self.op.push(op);
         self.pa.push(a);
         self.pb.push(b);
+        self.pc.push(-1);
+        self.iarg.push(0);
+        self.aux_off.push(self.aux.len);
         self.target.push(Tensor32::zeros(1, 1));
+        self.extra.push(Tensor32::zeros(1, 1));
         self.count += 1;
         return self.count - 1;
     }
     int input(self, Tensor32 t) { return self.node(OP_INPUT(), -1, -1, t); }
     int param(self, Tensor32 t) { return self.node(OP_PARAM(), -1, -1, t); }
     // the nodes made so far are the parameters; clear() goes back to this point
-    void mark(self) { self.keep = self.count; }
+    void mark(self) { self.keep = self.count; self.aux_keep = self.aux.len; }
     void clear(self) {
         while self.count > self.keep {
             Tensor32 gone = self.val.pop();
@@ -527,8 +547,13 @@ struct Graph {
             self.pa.pop();
             self.pb.pop();
             Tensor32 gone3 = self.target.pop();
+            Tensor32 gone4 = self.extra.pop();
+            self.pc.pop();
+            self.iarg.pop();
+            self.aux_off.pop();
             self.count -= 1;
         }
+        while self.aux.len > self.aux_keep { self.aux.pop(); }
     }
     Tensor32 value(self, int n) { return self.val[n]; }
     Tensor32 gradient(self, int n) { return self.grad[n]; }
@@ -547,6 +572,125 @@ struct Graph {
         for i in 0..r.d.len { r.d[i] = (float)(1.0 / (1.0 + Math::exp(0.0 - (double)self.val[a].d[i]))); }
         return self.node(OP_SIGMOID(), a, -1, r);
     }
+
+    // rows of a table of vectors (token numbers -> vectors): ids has one number per row of the result; the table is a parameter of shape vocab x width
+    int embed(self, int table, int[] ids) {
+        int w = self.val[table].cols();
+        Tensor32 r = Tensor32::zeros(ids.len, w);
+        for i in 0..ids.len { for j in 0..w { r.d[i * w + j] = self.val[table].d[ids[i] * w + j]; } }
+        int n = self.node(OP_EMBED(), table, -1, r);
+        for i in 0..ids.len { self.aux.push(ids[i]); }
+        self.iarg[n] = ids.len;
+        return n;
+    }
+    // GELU (the tanh form) and SiLU (x times sigmoid x)
+    int gelu(self, int a) {
+        Tensor32 r = Tensor32::make(self.val[a].shape);
+        for i in 0..r.d.len {
+            double x = (double)self.val[a].d[i];
+            r.d[i] = (float)(0.5 * x * (1.0 + Math::tanh(0.7978845608 * (x + 0.044715 * x * x * x))));
+        }
+        return self.node(OP_GELU(), a, -1, r);
+    }
+    int silu(self, int a) {
+        Tensor32 r = Tensor32::make(self.val[a].shape);
+        for i in 0..r.d.len {
+            double x = (double)self.val[a].d[i];
+            r.d[i] = (float)(x / (1.0 + Math::exp(0.0 - x)));
+        }
+        return self.node(OP_SILU(), a, -1, r);
+    }
+    // every row: (x - mean) / sqrt(variance + 0.00001), then times gain and plus bias (gain and bias: one row each, as parameters)
+    int layer_norm(self, int a, int gain, int bias) {
+        int c = self.val[a].cols();
+        int m = self.val[a].rows();
+        Tensor32 y = Tensor32::make(self.val[a].shape);
+        Tensor32 xh = Tensor32::make(self.val[a].shape);
+        Tensor32 inv = Tensor32::zeros(m, 1);
+        for i in 0..m {
+            double mu = 0.0;
+            for j in 0..c { mu += (double)self.val[a].d[i * c + j]; }
+            mu = mu / (double)c;
+            double var = 0.0;
+            for j in 0..c { double e = (double)self.val[a].d[i * c + j] - mu; var += e * e; }
+            var = var / (double)c;
+            double iv = 1.0 / Math::sqrt(var + 0.00001);
+            inv.d[i] = (float)iv;
+            for j in 0..c {
+                double h = ((double)self.val[a].d[i * c + j] - mu) * iv;
+                xh.d[i * c + j] = (float)h;
+                y.d[i * c + j] = (float)(h * (double)self.val[gain].d[j] + (double)self.val[bias].d[j]);
+            }
+        }
+        int n = self.node(OP_LAYER_NORM(), a, gain, y);
+        self.pc[n] = bias;
+        self.target[n] = xh;
+        self.extra[n] = inv;
+        return n;
+    }
+    // every row: x / sqrt(mean of squares + 0.00001), times gain (the norm of the Llama models: no mean, no bias)
+    int rms_norm(self, int a, int gain) {
+        int c = self.val[a].cols();
+        int m = self.val[a].rows();
+        Tensor32 y = Tensor32::make(self.val[a].shape);
+        Tensor32 xh = Tensor32::make(self.val[a].shape);
+        Tensor32 inv = Tensor32::zeros(m, 1);
+        for i in 0..m {
+            double ms = 0.0;
+            for j in 0..c { double e = (double)self.val[a].d[i * c + j]; ms += e * e; }
+            ms = ms / (double)c;
+            double iv = 1.0 / Math::sqrt(ms + 0.00001);
+            inv.d[i] = (float)iv;
+            for j in 0..c {
+                double h = (double)self.val[a].d[i * c + j] * iv;
+                xh.d[i * c + j] = (float)h;
+                y.d[i * c + j] = (float)(h * (double)self.val[gain].d[j]);
+            }
+        }
+        int n = self.node(OP_RMS_NORM(), a, gain, y);
+        self.target[n] = xh;
+        self.extra[n] = inv;
+        return n;
+    }
+    // causal self-attention of one sequence: q, k, v have one row per position and the width is split into `heads` equal parts;
+    // position i looks at the positions 0..i only: softmax(q.k / sqrt(width of a head)) @ v
+    int attention(self, int q, int k, int v, int heads) {
+        int t = self.val[q].rows();
+        int w = self.val[q].cols();
+        int dh = w / heads;
+        double sc = 1.0 / Math::sqrt((double)dh);
+        Tensor32 out = Tensor32::zeros(t, w);
+        Tensor32 pr = Tensor32::zeros(heads * t, t);
+        for h in 0..heads {
+            for i in 0..t {
+                double mx = -1.0e30;
+                for j in 0..i + 1 {
+                    double s = 0.0;
+                    for d in 0..dh { s += (double)self.val[q].d[i * w + h * dh + d] * (double)self.val[k].d[j * w + h * dh + d]; }
+                    s = s * sc;
+                    pr.d[(h * t + i) * t + j] = (float)s;
+                    if s > mx { mx = s; }
+                }
+                double z = 0.0;
+                for j in 0..i + 1 {
+                    double e = Math::exp((double)pr.d[(h * t + i) * t + j] - mx);
+                    pr.d[(h * t + i) * t + j] = (float)e;
+                    z += e;
+                }
+                for j in 0..i + 1 {
+                    double p = (double)pr.d[(h * t + i) * t + j] / z;
+                    pr.d[(h * t + i) * t + j] = (float)p;
+                    for d in 0..dh { out.d[i * w + h * dh + d] += (float)(p * (double)self.val[v].d[j * w + h * dh + d]); }
+                }
+            }
+        }
+        int n = self.node(OP_ATTENTION(), q, k, out);
+        self.pc[n] = v;
+        self.iarg[n] = heads;
+        self.target[n] = pr;
+        return n;
+    }
+
     // the mean of the squares of (a - target): one number
     int mse(self, int a, Tensor32 target) {
         double s = 0.0;
@@ -569,7 +713,8 @@ struct Graph {
         Tensor32 r = Tensor32::zeros(1, 1);
         r.d[0] = (float)(s / (double)classes.len);
         int n = self.node(OP_SOFTMAX_CE(), a, -1, r);
-        self.label = classes;
+        for i in 0..classes.len { self.aux.push(classes[i]); }
+        self.iarg[n] = classes.len;
         self.target[n] = p;
         return n;
     }
@@ -624,11 +769,100 @@ struct Graph {
                     float k2 = (float)(2.0 * (double)dy.d[0] / (double)g.d.len);
                     for k in 0..g.d.len { g.d[k] = (self.val[a].d[k] - self.target[i].d[k]) * k2; }
                     self.give(a, g);
+                } else if o == OP_EMBED() {
+                    int w = self.val[a].cols();
+                    Tensor32 g = Tensor32::zeros(self.val[a].rows(), w);
+                    for r in 0..self.iarg[i] {
+                        int id = self.aux[self.aux_off[i] + r];
+                        for j in 0..w { g.d[id * w + j] += dy.d[r * w + j]; }
+                    }
+                    self.give(a, g);
+                } else if o == OP_GELU() {
+                    Tensor32 g = Tensor32::make(dy.shape);
+                    for k in 0..g.d.len {
+                        double x = (double)self.val[a].d[k];
+                        double u = 0.7978845608 * (x + 0.044715 * x * x * x);
+                        double th = Math::tanh(u);
+                        double du = 0.7978845608 * (1.0 + 3.0 * 0.044715 * x * x);
+                        g.d[k] = (float)((double)dy.d[k] * (0.5 * (1.0 + th) + 0.5 * x * (1.0 - th * th) * du));
+                    }
+                    self.give(a, g);
+                } else if o == OP_SILU() {
+                    Tensor32 g = Tensor32::make(dy.shape);
+                    for k in 0..g.d.len {
+                        double x = (double)self.val[a].d[k];
+                        double sg = 1.0 / (1.0 + Math::exp(0.0 - x));
+                        g.d[k] = (float)((double)dy.d[k] * sg * (1.0 + x * (1.0 - sg)));
+                    }
+                    self.give(a, g);
+                } else if o == OP_LAYER_NORM() || o == OP_RMS_NORM() {
+                    int c = dy.cols();
+                    int m = dy.rows();
+                    Tensor32 dx = Tensor32::make(dy.shape);
+                    Tensor32 dg = Tensor32::zeros(1, c);
+                    Tensor32 db = Tensor32::zeros(1, c);
+                    for r in 0..m {
+                        double s1 = 0.0;
+                        double s2 = 0.0;
+                        for j in 0..c {
+                            double dyj = (double)dy.d[r * c + j];
+                            double xh = (double)self.target[i].d[r * c + j];
+                            double dxh = dyj * (double)self.val[b].d[j];
+                            s1 += dxh;
+                            s2 += dxh * xh;
+                            dg.d[j] += (float)(dyj * xh);
+                            db.d[j] += (float)dyj;
+                        }
+                        double iv = (double)self.extra[i].d[r];
+                        for j in 0..c {
+                            double xh = (double)self.target[i].d[r * c + j];
+                            double dxh = (double)dy.d[r * c + j] * (double)self.val[b].d[j];
+                            if o == OP_LAYER_NORM() { dx.d[r * c + j] = (float)(iv * (dxh - s1 / (double)c - xh * s2 / (double)c)); }
+                            else { dx.d[r * c + j] = (float)(iv * (dxh - xh * s2 / (double)c)); }
+                        }
+                    }
+                    self.give(a, dx);
+                    self.give(b, dg);
+                    if o == OP_LAYER_NORM() { self.give(self.pc[i], db); }
+                } else if o == OP_ATTENTION() {
+                    int vv = self.pc[i];
+                    int t = self.val[a].rows();
+                    int w = self.val[a].cols();
+                    int heads = self.iarg[i];
+                    int dh = w / heads;
+                    double sc = 1.0 / Math::sqrt((double)dh);
+                    Tensor32 dq = Tensor32::zeros(t, w);
+                    Tensor32 dk = Tensor32::zeros(t, w);
+                    Tensor32 dv = Tensor32::zeros(t, w);
+                    for h in 0..heads {
+                        for r in 0..t {
+                            double dot = 0.0;                                   // sum over j of P_rj * dP_rj
+                            for j in 0..r + 1 {
+                                double dp = 0.0;
+                                for d in 0..dh { dp += (double)dy.d[r * w + h * dh + d] * (double)self.val[vv].d[j * w + h * dh + d]; }
+                                dot += (double)self.target[i].d[(h * t + r) * t + j] * dp;
+                            }
+                            for j in 0..r + 1 {
+                                double p = (double)self.target[i].d[(h * t + r) * t + j];
+                                double dp = 0.0;
+                                for d in 0..dh { dp += (double)dy.d[r * w + h * dh + d] * (double)self.val[vv].d[j * w + h * dh + d]; }
+                                double ds = p * (dp - dot) * sc;
+                                for d in 0..dh {
+                                    dv.d[j * w + h * dh + d] += (float)(p * (double)dy.d[r * w + h * dh + d]);
+                                    dq.d[r * w + h * dh + d] += (float)(ds * (double)self.val[b].d[j * w + h * dh + d]);
+                                    dk.d[j * w + h * dh + d] += (float)(ds * (double)self.val[a].d[r * w + h * dh + d]);
+                                }
+                            }
+                        }
+                    }
+                    self.give(a, dq);
+                    self.give(b, dk);
+                    self.give(vv, dv);
                 } else if o == OP_SOFTMAX_CE() {
                     Tensor32 g = self.target[i].copy();                    // the probabilities
                     int c = g.cols();
-                    int rows = self.label.len;
-                    for r in 0..rows { g.d[r * c + self.label[r]] -= 1.0; }
+                    int rows = self.iarg[i];
+                    for r in 0..rows { g.d[r * c + self.aux[self.aux_off[i] + r]] -= 1.0; }
                     float k3 = (float)((double)dy.d[0] / (double)rows);
                     for k in 0..g.d.len { g.d[k] = g.d[k] * k3; }
                     self.give(a, g);

@@ -1,0 +1,95 @@
+#import <stdlib>
+#import <neuron>
+// a nano GPT (one block, 2 heads) learns a tiny text, character by character, and writes it back
+Graph g;
+Linear wq;
+Linear wk;
+Linear wv;
+Linear wo;
+Linear up;
+Linear down;
+Linear head;
+int emb;
+int pos;
+int gain1;
+int gain2;
+int gain3;
+
+// the logits (one row per position) for the token numbers in ids
+int forward(int[] ids) {
+    int t = ids.len;
+    int[] pids = arr(t);
+    for i in 0..t { pids.push(i); }
+    int x = g.add(g.embed(emb, ids), g.embed(pos, pids));
+    int n1 = g.rms_norm(x, gain1);
+    int att = g.attention(g.apply(wq, n1), g.apply(wk, n1), g.apply(wv, n1), 2);
+    x = g.add(x, g.apply(wo, att));
+    int n2 = g.rms_norm(x, gain2);
+    x = g.add(x, g.apply(down, g.gelu(g.apply(up, n2))));
+    return g.apply(head, g.rms_norm(x, gain3));
+}
+
+void main() {
+    String text = "the cat sat on the mat. the dog sat on the log. ";
+    String all = "";
+    for r in 0..12 { all = all + text; }
+    // the vocabulary: the characters of the text
+    String chars = "";
+    for i in 0..text.len { if !chars.contains(text.slice(i, i + 1)) { chars = chars + text.slice(i, i + 1); } }
+    int v = chars.len;
+    int[] tok = arr(all.len + 1);
+    for i in 0..all.len { tok.push(chars.find(all.slice(i, i + 1))); }
+
+    int d = 32;
+    int ctx = 16;
+    g = Graph::make();
+    emb = g.param(Tensor32::random(v, d, 1, 0.3));
+    pos = g.param(Tensor32::random(ctx, d, 2, 0.3));
+    Tensor32 ones = Tensor32::zeros(1, d);
+    for k in 0..d { ones.d[k] = 1.0; }
+    gain1 = g.param(ones.copy());
+    gain2 = g.param(ones.copy());
+    gain3 = g.param(ones.copy());
+    wq = g.linear(d, d, 3);
+    wk = g.linear(d, d, 4);
+    wv = g.linear(d, d, 5);
+    wo = g.linear(d, d, 6);
+    up = g.linear(d, 4 * d, 7);
+    down = g.linear(4 * d, d, 8);
+    head = g.linear(d, v, 9);
+    g.mark();
+
+    double first = 0.0;
+    double last = 0.0;
+    int steps = 500;
+    for step in 0..steps {
+        int start = (step * 7) % (tok.len - ctx - 1);
+        int[] inp = arr(ctx);
+        int[] want = arr(ctx);
+        for i in 0..ctx { inp.push(tok[start + i]); want.push(tok[start + i + 1]); }
+        int loss = g.softmax_ce(forward(inp), want);
+        if step == 0 { first = (double)g.value(loss).d[0]; }
+        last = (double)g.value(loss).d[0];
+        g.backward(loss);
+        g.clip(1.0);
+        g.adamw(Sched::cosine(step, steps, 20, 0.01, 0.0005), 0.0);
+        g.clear();
+    }
+    cout << "loss from " << (first > 2.0) << " to small " << (last < 0.3) << "\n";
+
+    // greedy writing: start with "the c" and add the most likely next character, 30 times
+    String made = "the c";
+    for k in 0..30 {
+        int[] inp = arr(ctx);
+        int from = made.len - ctx;
+        if from < 0 { from = 0; }
+        for i in from..made.len { inp.push(chars.find(made.slice(i, i + 1))); }
+        Tensor32 sc = g.value(forward(inp));
+        g.clear();
+        int row = inp.len - 1;
+        int best = 0;
+        for c in 1..v { if sc.d[row * v + c] > sc.d[row * v + best] { best = c; } }
+        made = made + chars.slice(best, best + 1);
+    }
+    cout << "written: " << made << "\n";
+}

@@ -1,5 +1,9 @@
 # Jcmp-libs changelog (what changed in the libraries, newest first)
 
+## neuron 0.5.0 (2026-10-29)
+* **Added:** layers for text on the `Graph`: `embed`, `gelu`, `silu`, `layer_norm`, `rms_norm`, causal multi-head `attention` (all with gradients checked numerically); `examples/nano_gpt.jk`, a one-block GPT that trains on a phone in seconds and writes text.
+* **Fixed:** none.
+
 ## neuron 0.4.0 (2026-10-29)
 * **Added:** the training kit: `Graph.linear` / `apply` (a layer), `adamw(lr, decay)`, `clip(max_norm)`, `save(path)` / `load(path)` of the parameters, `Tensor32.gather(idx)` (a mini-batch), `shuffled(n, seed)`, `Sched::cosine` (warm-up and cosine fall). Tested on a two-rings problem; save/load restores the same answers.
 * **Fixed:** none.
