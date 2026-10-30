@@ -1,0 +1,14 @@
+#import <stdlib>
+#import <llama>
+// writes a story with a small GGUF model:  chat_tiny model.gguf "Once upon a time"
+void main() {
+    String[] a = Env::args();
+    if a.len < 3 { cout << "usage: chat_tiny model.gguf \"start of the text\"\n"; return; }
+    switch Lm::load(a[1]) {
+        Result::Ok(m): {
+            int[] ids = m.encode(a[2]);
+            cout << a[2] << m.generate(ids, 120, 0.8, 40, 0.95, 1) << "\n";
+        }
+        Result::Err(e): { cout << "cannot load the model: " << e.message << "\n"; }
+    }
+}

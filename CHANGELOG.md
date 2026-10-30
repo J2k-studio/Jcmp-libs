@@ -1,5 +1,13 @@
 # Jcmp-libs changelog (what changed in the libraries, newest first)
 
+## llama 0.1.0 (2026-10-30)
+* **Added:** `llama`: runs Llama-style GGUF models: forward pass (RMS norm, RoPE, grouped-query attention, SwiGLU, KV cache), a SentencePiece tokenizer, greedy / temperature / top-k / top-p sampling. `stories15M-q4_0` writes coherent stories at about 11 tokens per second on a phone.
+* **Fixed:** none.
+
+## gguf 0.1.0 (2026-10-30)
+* **Added:** `gguf`: reads GGUF model files: metadata, the vocabulary, merges and token scores, the list of tensors, and F32 / F16 / BF16 / Q8_0 / Q4_0 tensors as float32 `Tensor32`. First step of running real models on the phone.
+* **Fixed:** none.
+
 ## neuron 0.5.0 (2026-10-29)
 * **Added:** layers for text on the `Graph`: `embed`, `gelu`, `silu`, `layer_norm`, `rms_norm`, causal multi-head `attention` (all with gradients checked numerically); `examples/nano_gpt.jk`, a one-block GPT that trains on a phone in seconds and writes text.
 * **Fixed:** none.
