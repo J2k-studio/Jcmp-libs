@@ -48,3 +48,19 @@ Every function below is used as shown: `Type::name(...)` is a static function, `
 | `x.api_text()` | `String` | the Vulkan version as text |
 | `Vk::open()` | `Vk` | make an instance and look at the first chip: `device_name`, `api_version`, `memory_mb`, `has_compute`, `queue_families`; `ok` and `log` |
 | `x.close()` | `void` | destroy the instance |
+
+## 0.3.0: device, buffers, compute
+
+| call | gives | what it does |
+|---|---|---|
+| `vk.make_device()` | `bool` | a logical device and one queue of the compute family (`vk.family`) |
+| `vk.make_buffer(bytes)` | `VkBuf` | a buffer in memory the CPU and the GPU both see; `b.ok`, `b.ptr` |
+| `b.upload(float^ p, n)`, `b.download(float^ p, n)` | | copy numbers in and out |
+| `vk.make_compute(int[] spirv, nbuf)` | `Compute` | a compute pipeline from SPIR-V words (entry point `main`; storage buffers 0 .. nbuf-1 of set 0); `k.ok`, `k.error` |
+| `k.bind(i, b)` | | buffer `b` is the storage buffer `i` of the shader |
+| `k.run(gx, gy, gz)` | `bool` | dispatch and wait; false and `k.error` when a call fails |
+| `k.destroy()`, `b.destroy()`, `vk.close()` | | free in this order: pipeline, buffers, then the device |
+| `VkShaders::vector_add()` | `int[]` | a ready SPIR-V shader: `c[i] = a[i] + b[i]`, local size 64 |
+| `Vk::result_text(rc)` | `String` | the name of a `VkResult` |
+
+A struct that has a method called `free` is freed when a function that took it by value ends; that is why `VkBuf` and `Compute` use `destroy`.

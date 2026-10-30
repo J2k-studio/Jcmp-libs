@@ -5,6 +5,7 @@ One lesson per library: a table of the syntax it adds, programs that compile and
 * [complex](complex.md) - Lesson: `<complex>` - numbers with an imaginary part
 * [deflate](deflate.md) - Lesson: `<deflate>` - packing bytes smaller (and gzip, and a checksum)
 * [discord](discord.md) - Lesson: `<discord>` - a bot for a server, by asking or by listening
+* [jai](jai.md) - Lesson: `<jai>` - a network in a few lines
 * [jobs-tasks](jobs-tasks.md) - Lesson: `<jobs>` and `<tasks>` - using all the cores
 * [neuron-1-tensors](neuron-1-tensors.md) - Lesson: `<neuron>` 1 - tensors and gradients
 * [neuron-2-training](neuron-2-training.md) - Lesson: `<neuron>` 2 - training a network

@@ -14,6 +14,7 @@ gguf 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gguf
 glapp 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/glapp.j 5778288a0afa728e94081b41616dadc5fa8f6916cc33401ae9f845a5626b73ca
 glcanvas 0.2.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/glcanvas.j b8eab77826eafae8b5861cba6eba773f597895d4c93f22408daaa16704afd44d
 gpu 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gpu.j d2dd662c04381b21f0de3437aefad1c9a9c212c25278cfb2dea78ab095b5d680
+jai 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/jai.j 4994fd130a2422b84bc67c853ccae2bd3300ac33e7fd62a3e1d48a528b4a29e4
 jobs 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/jobs.j f4ecdad5c02fc5f8b5aa0ac29e2e8dffd91d3392fbc7e07fda7eafb15b571c18
 llama 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/llama.j f36cf2b8712fdd7ed2d75426d11d6dca367f3479a09a65c4ad819155183e7311
 native 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/native.j 89be83affdd06e4e051e8a6eceb4f52a6d182d69f74204bd3c5742c72c127893
@@ -35,6 +36,6 @@ stats 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/s
 tasks 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/tasks.j 36f157ba9345f0f831a98e9f607f85814fb32e40ec8d36da07603bf353d9d2c1
 telegram 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/telegram.j 31307b6217ce4d9113d3bc54ae00e4403e4e25b219f69a1c1d65522c0a8a0d06
 tilemap 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/tilemap.j 7c8f9cb88b34f11cc69f9ce0752a37ff6bcdb8599a2fceb825107cfacf8b46a5
-vulkan 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/vulkan.j 29ace19adf9c1200c5550943bbc9d821e2256110d815e3928affef18620d8ad4
+vulkan 0.3.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/vulkan.j 8e193131131b45555c9eabf21d8f666e155c6e44462317d72dbc60932bf9e00c
 web 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/web.j 5b3c2969f5da08a07e5464240fefb5c74757a13fdad903a8b555bc667bcf1c55
 websocket 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/websocket.j b0cc2f0e4dfe0626c015753e3ddf758fbc19a475d259fe4c20a24ce80ea63e62
