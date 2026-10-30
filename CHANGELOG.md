@@ -1,5 +1,9 @@
 # Jcmp-libs changelog (what changed in the libraries, newest first)
 
+## neuron 0.6.0 (2026-10-30)
+* **Added:** `Graph.conv2d` (window, stride, padding, channels) and `Graph.maxpool`, with gradients checked numerically; a conv network learns to tell three kinds of pictures apart.
+* **Fixed:** none.
+
 ## llama 0.1.1 (2026-10-30)
 * **Added:** the matrix-vector product uses NEON (four numbers at a time, two sums): `stories15M-q4_0` goes from 11 to 82 tokens per second on a Kirin 990 with the same text.
 * **Fixed:** none.

@@ -14,7 +14,7 @@ jobs 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/jobs
 llama 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/llama.j e2af9e96c2df55a889822c2215f634e2fee50b5b3b2e612e11f78b86d7560328
 # NAME is letters, digits and _ only. The library is one J2K source file (NAME.j). SHA256 is the checksum of that file.
 native 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/native.j 89be83affdd06e4e051e8a6eceb4f52a6d182d69f74204bd3c5742c72c127893
-neuron 0.5.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neuron.j abd2785c9e62a8270d8f0343dbd6f77f493c354cf202cb70c50acd1a6c7c0c14
+neuron 0.6.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neuron.j 281e2c9a9d7b1cfe4b5f59b9719057c9632db9ac8ef3135ceeba6bbce45bb09c
 # One line for each library:  NAME VERSION URL SHA256
 opengl3 0.3.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/opengl3.j ff1da5104c3962b559e947304b785a1e66978d94f3a9b61576c80c6d7a6eace1
 phys2d 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/phys2d.j aabde720965677fb2d4204e734803fc8c9dec60b4195224855aa441da191b576

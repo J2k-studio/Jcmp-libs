@@ -132,3 +132,13 @@ New nodes of `Graph` (each has a gradient that is checked against a numeric diff
 * `attention(q, k, v, heads)`: causal self-attention of one sequence (one row per position; the width is split into `heads` equal parts; a position sees only itself and the earlier ones).
 
 `examples/nano_gpt.jk` is a small GPT (embeddings, rms norm, 2-head attention, a GELU feed-forward, residual connections) with the usual training loop (AdamW, cosine schedule, clip): it learns a tiny text in about 5 seconds on a phone (500 steps) and writes it back one character at a time. Convolutions and pooling (for images) are next; so are loading real models (GGUF) and faster kernels.
+
+## 0.6.0: convolution and pooling (images)
+An image is one row of a table: channels x height x width numbers.
+```jk
+// conv2d(x, w, b, c_in, h, w, c_out, k, stride, pad): w is a parameter of c_out rows of c_in*k*k numbers, b a parameter of one row of c_out numbers
+int c = g.relu(g.conv2d(g.input(pics), cw, cb, 1, 8, 8, 4, 3, 1, 1));    // 1 -> 4 channels, 3x3 window, stride 1, padding 1: 4 x 8 x 8 per row
+int p = g.maxpool(c, 4, 8, 8, 2);                                        // the biggest number of every 2x2 square: 4 x 4 x 4 per row
+int loss = g.softmax_ce(g.apply(fc, p), classes);
+```
+The gradients of both are checked numerically (the weights, the bias and the input); a small network (conv, relu, maxpool, linear) separates three kinds of 8x8 pictures (a horizontal bar, a vertical bar, a diagonal in noise) with 60 of 60 right after 120 steps.

@@ -1,4 +1,4 @@
-// neuron 0.5.0 -- tensors and small neural networks that train on the phone.   #import <neuron>   (needs jcmp 1.1.0.0; license: MPL-2.0)
+// neuron 0.6.0 -- tensors and small neural networks that train on the phone.   #import <neuron>   (needs jcmp 1.1.0.0; license: MPL-2.0)
 // 0.2.0: Tensor::matmul_fast(o): float32 + NEON dot products + threads for big tables (see the fast way below)
 //   Tensor a = Tensor::zeros(2, 3);   a.set(0, 1, 5.0);   Tensor c = a.matmul(b);   Tensor p = c.relu().softmax();
 //   Network n = Network::make();   n.add(2, 8);   n.add(8, 1);                // layers of neurons: relu between them
@@ -470,6 +470,8 @@ int OP_SILU() { return 12; }
 int OP_LAYER_NORM() { return 13; }
 int OP_RMS_NORM() { return 14; }
 int OP_ATTENTION() { return 15; }
+int OP_CONV2D() { return 16; }
+int OP_MAXPOOL() { return 17; }
 
 // the two parameters of a layer (node numbers of the graph that made it)
 struct Linear {
@@ -691,6 +693,72 @@ struct Graph {
         return n;
     }
 
+    // a convolution over images: x has one image per row, stored as channels x height x width (c_in * h * w numbers); w is a parameter of c_out rows of
+    // c_in * k * k numbers; b a parameter of one row of c_out numbers. Square window k, stride, zero padding. The result has c_out * ho * wo numbers per row
+    // with ho = (h + 2 pad - k) / stride + 1 (the same for wo).
+    int conv2d(self, int x, int w, int b, int c_in, int h, int wd, int c_out, int k, int stride, int pad) {
+        int ho = (h + 2 * pad - k) / stride + 1;
+        int wo = (wd + 2 * pad - k) / stride + 1;
+        int nimg = self.val[x].rows();
+        Tensor32 r = Tensor32::zeros(nimg, c_out * ho * wo);
+        int inw = c_in * h * wd;
+        int outw = c_out * ho * wo;
+        for n in 0..nimg {
+            for co in 0..c_out {
+                for oy in 0..ho {
+                    for ox in 0..wo {
+                        double s = (double)self.val[b].d[co];
+                        for ci in 0..c_in {
+                            for ky in 0..k {
+                                int iy = oy * stride - pad + ky;
+                                if iy < 0 || iy >= h { continue; }
+                                for kx in 0..k {
+                                    int ix = ox * stride - pad + kx;
+                                    if ix < 0 || ix >= wd { continue; }
+                                    s += (double)self.val[x].d[n * inw + (ci * h + iy) * wd + ix] * (double)self.val[w].d[co * c_in * k * k + (ci * k + ky) * k + kx];
+                                }
+                            }
+                        }
+                        r.d[n * outw + (co * ho + oy) * wo + ox] = (float)s;
+                    }
+                }
+            }
+        }
+        int node = self.node(OP_CONV2D(), x, w, r);
+        self.pc[node] = b;
+        self.aux.push(c_in); self.aux.push(h); self.aux.push(wd); self.aux.push(c_out); self.aux.push(k); self.aux.push(stride); self.aux.push(pad);
+        return node;
+    }
+    // the biggest number of every k x k square (stride k) of every channel: c channels of h x wd per row; h and wd should be multiples of k
+    int maxpool(self, int x, int c, int h, int wd, int k) {
+        int ho = h / k;
+        int wo = wd / k;
+        int nimg = self.val[x].rows();
+        int inw = c * h * wd;
+        int outw = c * ho * wo;
+        Tensor32 r = Tensor32::zeros(nimg, outw);
+        int node = self.node(OP_MAXPOOL(), x, -1, r);
+        self.aux.push(c); self.aux.push(h); self.aux.push(wd); self.aux.push(k);
+        for n in 0..nimg {
+            for ch in 0..c {
+                for oy in 0..ho {
+                    for ox in 0..wo {
+                        int best = n * inw + (ch * h + oy * k) * wd + ox * k;
+                        for ky in 0..k {
+                            for kx in 0..k {
+                                int at = n * inw + (ch * h + oy * k + ky) * wd + ox * k + kx;
+                                if self.val[x].d[at] > self.val[x].d[best] { best = at; }
+                            }
+                        }
+                        r.d[n * outw + (ch * ho + oy) * wo + ox] = self.val[x].d[best];
+                        self.aux.push(best);
+                    }
+                }
+            }
+        }
+        return node;
+    }
+
     // the mean of the squares of (a - target): one number
     int mse(self, int a, Tensor32 target) {
         double s = 0.0;
@@ -858,6 +926,52 @@ struct Graph {
                     self.give(a, dq);
                     self.give(b, dk);
                     self.give(vv, dv);
+                } else if o == OP_CONV2D() {
+                    int bb = self.pc[i];
+                    int ax = self.aux_off[i];
+                    int c_in = self.aux[ax]; int h = self.aux[ax + 1]; int wd = self.aux[ax + 2]; int c_out = self.aux[ax + 3];
+                    int k = self.aux[ax + 4]; int stride = self.aux[ax + 5]; int pad = self.aux[ax + 6];
+                    int ho = (h + 2 * pad - k) / stride + 1;
+                    int wo = (wd + 2 * pad - k) / stride + 1;
+                    int nimg = self.val[a].rows();
+                    int inw = c_in * h * wd;
+                    int outw = c_out * ho * wo;
+                    Tensor32 dx = Tensor32::zeros(nimg, inw);
+                    Tensor32 dw = Tensor32::zeros(c_out, c_in * k * k);
+                    Tensor32 db = Tensor32::zeros(1, c_out);
+                    for n in 0..nimg {
+                        for co in 0..c_out {
+                            for oy in 0..ho {
+                                for ox in 0..wo {
+                                    float g = dy.d[n * outw + (co * ho + oy) * wo + ox];
+                                    db.d[co] += g;
+                                    for ci in 0..c_in {
+                                        for ky in 0..k {
+                                            int iy = oy * stride - pad + ky;
+                                            if iy < 0 || iy >= h { continue; }
+                                            for kx in 0..k {
+                                                int ix = ox * stride - pad + kx;
+                                                if ix < 0 || ix >= wd { continue; }
+                                                int xi = n * inw + (ci * h + iy) * wd + ix;
+                                                int wi = co * c_in * k * k + (ci * k + ky) * k + kx;
+                                                dw.d[wi] += g * self.val[a].d[xi];
+                                                dx.d[xi] += g * self.val[b].d[wi];
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    self.give(a, dx);
+                    self.give(b, dw);
+                    self.give(bb, db);
+                } else if o == OP_MAXPOOL() {
+                    int ax = self.aux_off[i];
+                    int c = self.aux[ax]; int h = self.aux[ax + 1]; int wd = self.aux[ax + 2];
+                    Tensor32 dx = Tensor32::zeros(self.val[a].rows(), c * h * wd);
+                    for q in 0..dy.d.len { dx.d[self.aux[ax + 4 + q]] += dy.d[q]; }
+                    self.give(a, dx);
                 } else if o == OP_SOFTMAX_CE() {
                     Tensor32 g = self.target[i].copy();                    // the probabilities
                     int c = g.cols();
