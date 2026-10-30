@@ -18,3 +18,4 @@ switch Gg::open("model.gguf") {
 * Tensor types read: F32, F16, BF16, Q8_0, Q4_0 (`supported(i)` tells). The others (Q4_K, Q5, Q6 ...) are listed but not loaded yet.
 * The header is read into memory (up to 64 MB); a tensor is read from the file only when `load` is called, so a big model costs memory only for the tensors you use.
 * Tested on a small file with all four tensor types, a Thai name, arrays, and a file that is not GGUF.
+* 0.2.0: `load_mat(i)` gives a `QMat` (int8 values and scales) for Q8_0 / Q4_0 tensors without making float32 first; `load` still gives float32.

@@ -1,4 +1,4 @@
-// gguf 0.1.0 -- a reader of GGUF model files (the format of llama.cpp): metadata, the tokens, and the tensors as float32.   #import <gguf>   (needs <neuron>; license: MPL-2.0)
+// gguf 0.2.0 -- a reader of GGUF model files (the format of llama.cpp): metadata, the tokens, and the tensors as float32.   #import <gguf>   (needs <neuron>, <simd>; license: MPL-2.0)
 //   switch Gg::open("model.gguf") {
 //       Result::Ok(f): {
 //           cout << f.meta("general.architecture") << " " << f.meta_int("llama.block_count", 0) << "\n";
@@ -11,6 +11,7 @@
 // f.tokens (the vocabulary), f.merges (BPE merges, if the file has them). The whole header is read into memory (up to 64 MB); a tensor is read from the file when it is loaded.
 
 #import <neuron>
+#import <simd>
 
 struct GgReader {
     String b;
@@ -53,6 +54,17 @@ double gg_half(int h) {
     else { v = (1.0 + (double)m / 1024.0) * Math::pow(2.0, (double)(e - 15)); }
     if sign == 1 { return 0.0 - v; }
     return v;
+}
+
+// a matrix of a model: quantised tensors (Q8_0, Q4_0) are kept as bytes (int8, one byte per weight) with a scale for every 32 weights, so a product with them
+// moves a quarter of the memory of float32 and can use the int8 dot product (i8x16.dot); other types are float32 in `f`
+struct QMat {
+    int quant;                         // 1: wq / ws hold the weights; 0: f holds them
+    Tensor32 f;
+    int rows;
+    int cols;
+    int wq;                            // the address of rows * cols int8 weights (row after row)
+    int ws;                            // the address of rows * cols / 32 float scales
 }
 
 struct GgufFile {
@@ -187,6 +199,79 @@ struct GgufFile {
         }
         return r;
     }
+
+    // a weight matrix: Q8_0 and Q4_0 stay as int8 + scales (Q4_0 is widened to one byte per weight), the other types become float32
+    QMat load_mat(self, String name, bool^ ok) {
+        QMat m;
+        m.quant = 0;
+        m.f = Tensor32::zeros(1, 1);
+        m.rows = 0;
+        m.cols = 0;
+        m.wq = 0;
+        m.ws = 0;
+        int i = self.find(name);
+        if i < 0 { ok[0] = false; return m; }
+        int t = self.t_type[i];
+        if t != 2 && t != 8 {
+            m.f = self.load_at(i, ok);
+            m.rows = m.f.rows();
+            m.cols = m.f.cols();
+            return m;
+        }
+        int n = self.elements(i);
+        int cols = self.t_dims[i * 4];
+        if cols % 32 != 0 { ok[0] = false; return m; }
+        int nb = n / 32;
+        int bsz = 34;
+        if t == 2 { bsz = 18; }
+        i8^ wq = (i8^)Sys::mmap(n + 64);
+        float^ ws = (float^)Sys::mmap(nb * 4 + 64);
+        int fd = Sys::open_read(self.path.c());
+        if fd < 0 { ok[0] = false; return m; }
+        Sys::lseek(fd, self.data_start + self.t_off[i], 0);
+        char buf[34816];                                            // 1024 blocks of the biggest kind
+        int done = 0;
+        while done < nb {
+            int cnt = nb - done;
+            if cnt > 1024 { cnt = 1024; }
+            int want = cnt * bsz;
+            int got = 0;
+            while got < want {
+                int r = Sys::read(fd, @buf + got, want - got);
+                if r <= 0 { break; }
+                got += r;
+            }
+            if got < want { Sys::close(fd); ok[0] = false; return m; }
+            for blk in 0..cnt {
+                int o = blk * bsz;
+                ws[done + blk] = (float)gg_half((buf[o] & 255) | ((buf[o + 1] & 255) << 8));
+                int base = (done + blk) * 32;
+                if t == 8 {
+                    for j in 0..32 {
+                        int v = buf[o + 2 + j] & 255;
+                        if v >= 128 { v = v - 256; }
+                        wq[base + j] = (i8)v;
+                    }
+                } else {
+                    for j in 0..16 {
+                        int v = buf[o + 2 + j] & 255;
+                        wq[base + j] = (i8)((v & 15) - 8);
+                        wq[base + j + 16] = (i8)((v >> 4) - 8);
+                    }
+                }
+            }
+            done += cnt;
+        }
+        Sys::close(fd);
+        m.quant = 1;
+        m.rows = n / cols;
+        m.cols = cols;
+        m.wq = (int)wq;
+        m.ws = (int)ws;
+        ok[0] = true;
+        return m;
+    }
+
     // by name; a missing name or an unsupported type gives a 1 x 1 table with ok false
     Tensor32 load(self, String name, bool^ ok) {
         int i = self.find(name);

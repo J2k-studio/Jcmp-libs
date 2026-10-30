@@ -84,3 +84,25 @@ Every function below is used as shown: `Type::name(...)` is a static function, `
 | `x.sum()` | `i32` | the sum of the four |
 | `x.min()` | `i32` | the smallest |
 | `x.max()` | `i32` | the biggest |
+
+## i8x16 (0.10.0)
+
+Sixteen `i8` lanes in one register, made for quantised numbers (neural networks, sound).
+
+| call | gives | what it does |
+|---|---|---|
+| `i8x16::load(@a[0], i)` | `i8x16` | sixteen bytes from an array, starting at element i |
+| `x.store(@a[0], i)` | `void` | write sixteen bytes |
+| `a.dot(b)` | `i32x4` | four sums of four products (`sdot`): lane k = a[4k..4k+3] * b[4k..4k+3] |
+
+```
+#import <simd>
+int main() {
+    i8[] a = arr(16);
+    i8[] b = arr(16);
+    for i in 0..16 { a.push((i8) i); b.push(2); }
+    i32x4 d = i8x16::load(@a[0], 0).dot(i8x16::load(@b[0], 0));
+    cout << d.sum() << "\n";        // 240
+    return 0;
+}
+```

@@ -1,4 +1,4 @@
-// llama 0.1.1 -- runs Llama-style language models from GGUF files on the phone (CPU): the forward pass, a SentencePiece tokenizer, sampling.   #import <llama>   (needs <gguf>; license: MPL-2.0)
+// llama 0.2.0 -- runs Llama-style language models from GGUF files on the phone (CPU): the forward pass, a SentencePiece tokenizer, sampling.   #import <llama>   (needs <gguf>; license: MPL-2.0)
 //   switch Lm::load("stories15M-q4_0.gguf") {
 //       Result::Ok(m): {
 //           int[] ids = m.encode("Once upon a time");              // token numbers (with the start token)
@@ -12,12 +12,65 @@
 // grouped-query attention, SwiGLU) is supported; the context is cut at 512 tokens.
 
 #import <gguf>
+#import <simd>
 
-// y = W x for a table W of rows x cols and a vector x of cols numbers: four numbers at a time (NEON), two sums, when cols is a multiple of 8
-float[] llama_mv(Tensor32 w, float[] x) {
-    int rows = w.shape[0];
-    int cols = w.shape[1];
+i8^ lm_xq;                          // the quantised copy of the vector x (one byte per number) and its scales, made once for all products
+float^ lm_xs;
+
+// x as bytes, a scale for every 32 numbers (like Q8_0): a product with a quantised matrix uses it
+void llama_qx(float[] x) {
+    if (int)lm_xq == 0 {
+        lm_xq = (i8^)Sys::mmap(262144);
+        lm_xs = (float^)Sys::mmap(32768);
+    }
+    int nb = x.len / 32;
+    for b in 0..nb {
+        float amax = 0.0;
+        for j in 0..32 {
+            float v = x[b * 32 + j];
+            if v < 0.0 { v = 0.0 - v; }
+            if v > amax { amax = v; }
+        }
+        float inv = 0.0;
+        if amax > 0.0 { inv = 127.0 / amax; }
+        lm_xs[b] = amax / 127.0;
+        for j in 0..32 {
+            float v = x[b * 32 + j] * inv;
+            int q = 0;
+            if v >= 0.0 { q = (int)(v + 0.5); } else { q = 0 - (int)(0.5 - v); }
+            lm_xq[b * 32 + j] = (i8)q;
+        }
+    }
+}
+
+// one row of a quantised matrix against the quantised x: nb blocks of 32 weights, two SDOT instructions each (the lanes are added without a call)
+float llama_qrow(i8^ wp, float^ wsp, i8^ xq, float^ xs, int nb) {
+    float acc = 0.0;
+    for b in 0..nb {
+        i32x4 d0 = i8x16::load(wp, b * 32).dot(i8x16::load(xq, b * 32));
+        i32x4 d1 = i8x16::load(wp, b * 32 + 16).dot(i8x16::load(xq, b * 32 + 16));
+        i32x4 dd = d0 + d1;
+        int t = dd.x + dd.y + dd.z + dd.w;
+        acc += (float)t * (wsp[b] * xs[b]);
+    }
+    return acc;
+}
+
+// y = W x for a matrix W of rows x cols (QMat) and a vector x of cols numbers. A quantised matrix: x is quantised too and every 32 numbers are two SDOT
+// instructions (i8x16 dot); a float matrix: four numbers at a time (NEON), two sums, when cols is a multiple of 8
+float[] llama_mv(QMat m, float[] x) {
+    int rows = m.rows;
+    int cols = m.cols;
     float[] y = arr(rows + 1);
+    if m.quant == 1 {
+        llama_qx(x);
+        int nb = cols / 32;
+        float^ xs = lm_xs;
+        i8^ xq = lm_xq;
+        for j in 0..rows { y.push(llama_qrow((i8^)(m.wq + j * cols), (float^)(m.ws + j * nb * 4), xq, xs, nb)); }
+        return y;
+    }
+    Tensor32 w = m.f;
     if cols % 8 == 0 {
         float^ wp = @w.d[0];
         float^ xp = @x[0];
@@ -45,6 +98,19 @@ float[] llama_mv(Tensor32 w, float[] x) {
     return y;
 }
 
+// the row r of a matrix as float numbers (an embedding)
+float[] llama_row(QMat m, int r) {
+    float[] y = arr(m.cols + 1);
+    if m.quant == 1 {
+        i8^ wp = (i8^)(m.wq + r * m.cols);
+        float^ wsp = (float^)(m.ws + r * (m.cols / 32) * 4);
+        for j in 0..m.cols { y.push((float)wp[j] * wsp[j / 32]); }
+        return y;
+    }
+    for j in 0..m.cols { y.push(m.f.d[r * m.cols + j]); }
+    return y;
+}
+
 float[] llama_rms(float[] x, Tensor32 gain, double eps) {
     int n = x.len;
     double ss = 0.0;
@@ -67,17 +133,17 @@ struct Llama {
     double eps;
     double rope_base;
     int rope_dims;
-    Tensor32 tok_emb;
+    QMat tok_emb;
     Tensor32 out_norm;
-    Tensor32 output;
-    Tensor32[] wq;
-    Tensor32[] wk;
-    Tensor32[] wv;
-    Tensor32[] wo;
+    QMat output;
+    QMat[] wq;
+    QMat[] wk;
+    QMat[] wv;
+    QMat[] wo;
     Tensor32[] anorm;
-    Tensor32[] gate;
-    Tensor32[] down;
-    Tensor32[] up;
+    QMat[] gate;
+    QMat[] down;
+    QMat[] up;
     Tensor32[] fnorm;
     float[] kc;                        // the keys and values of the positions done: [layer][position][kv_heads * hd]
     float[] vc;
@@ -96,11 +162,18 @@ struct Llama {
     Tensor32 step(self, int token) {
         int e = self.embd;
         int kvd = self.kv_heads * self.hd;
-        float[] x = arr(e + 1);
-        for i in 0..e { x.push(self.tok_emb.d[token * e + i]); }
+        float[] x = llama_row(self.tok_emb, token);
         int p = self.pos;
         double inv = 1.0 / Math::sqrt((double)self.hd);
         int group = self.heads / self.kv_heads;
+        int half = self.rope_dims / 2;
+        float[] rc = arr(half + 1);                                      // cos and sin of the angles of this position (the same in every layer)
+        float[] rs = arr(half + 1);
+        for i in 0..half {
+            double ang = (double)p * Math::pow(self.rope_base, 0.0 - 2.0 * (double)i / (double)self.rope_dims);
+            rc.push((float)Math::cos(ang));
+            rs.push((float)Math::sin(ang));
+        }
         for l in 0..self.layers {
             float[] h = llama_rms(x, self.anorm[l], self.eps);
             float[] q = llama_mv(self.wq[l], h);
@@ -108,27 +181,21 @@ struct Llama {
             float[] v = llama_mv(self.wv[l], h);
             // RoPE: the pairs (2i, 2i+1) of every head are turned by the angle p * base^(-2i / dims)
             for hh in 0..self.heads {
-                for i in 0..self.rope_dims / 2 {
-                    double ang = (double)p * Math::pow(self.rope_base, 0.0 - 2.0 * (double)i / (double)self.rope_dims);
-                    float c = (float)Math::cos(ang);
-                    float s = (float)Math::sin(ang);
+                for i in 0..half {
                     int a = hh * self.hd + 2 * i;
                     float q0 = q[a];
                     float q1 = q[a + 1];
-                    q[a] = q0 * c - q1 * s;
-                    q[a + 1] = q0 * s + q1 * c;
+                    q[a] = q0 * rc[i] - q1 * rs[i];
+                    q[a + 1] = q0 * rs[i] + q1 * rc[i];
                 }
             }
             for hh in 0..self.kv_heads {
-                for i in 0..self.rope_dims / 2 {
-                    double ang = (double)p * Math::pow(self.rope_base, 0.0 - 2.0 * (double)i / (double)self.rope_dims);
-                    float c = (float)Math::cos(ang);
-                    float s = (float)Math::sin(ang);
+                for i in 0..half {
                     int a = hh * self.hd + 2 * i;
                     float k0 = k[a];
                     float k1 = k[a + 1];
-                    k[a] = k0 * c - k1 * s;
-                    k[a + 1] = k0 * s + k1 * c;
+                    k[a] = k0 * rc[i] - k1 * rs[i];
+                    k[a + 1] = k0 * rs[i] + k1 * rc[i];
                 }
             }
             int base = (l * self.ctx + p) * kvd;
@@ -357,32 +424,32 @@ struct Lm {
                 m.hd = m.embd / m.heads;
                 m.rope_dims = f.meta_int("llama.rope.dimension_count", m.hd);
                 bool ok = false;
-                m.tok_emb = f.load("token_embd.weight", @ok);
+                m.tok_emb = f.load_mat("token_embd.weight", @ok);
                 if !ok { return Lm::bad("no token_embd.weight (or a type that is not read)"); }
-                m.vocab = m.tok_emb.shape[0];
+                m.vocab = m.tok_emb.rows;
                 m.out_norm = f.load("output_norm.weight", @ok);
                 if !ok { return Lm::bad("no output_norm.weight"); }
-                m.output = f.load("output.weight", @ok);
-                if !ok { m.output = m.tok_emb.copy(); }                  // tied embeddings
+                m.output = f.load_mat("output.weight", @ok);
+                if !ok { m.output = m.tok_emb; }                         // tied embeddings
                 m.wq = arr(m.layers + 1); m.wk = arr(m.layers + 1); m.wv = arr(m.layers + 1); m.wo = arr(m.layers + 1);
                 m.anorm = arr(m.layers + 1); m.gate = arr(m.layers + 1); m.down = arr(m.layers + 1); m.up = arr(m.layers + 1); m.fnorm = arr(m.layers + 1);
                 for l in 0..m.layers {
                     String pre = "blk." + str(l) + ".";
-                    m.wq.push(f.load(pre + "attn_q.weight", @ok));
+                    m.wq.push(f.load_mat(pre + "attn_q.weight", @ok));
                     if !ok { return Lm::bad("missing " + pre + "attn_q.weight"); }
-                    m.wk.push(f.load(pre + "attn_k.weight", @ok));
+                    m.wk.push(f.load_mat(pre + "attn_k.weight", @ok));
                     if !ok { return Lm::bad("missing " + pre + "attn_k.weight"); }
-                    m.wv.push(f.load(pre + "attn_v.weight", @ok));
+                    m.wv.push(f.load_mat(pre + "attn_v.weight", @ok));
                     if !ok { return Lm::bad("missing " + pre + "attn_v.weight"); }
-                    m.wo.push(f.load(pre + "attn_output.weight", @ok));
+                    m.wo.push(f.load_mat(pre + "attn_output.weight", @ok));
                     if !ok { return Lm::bad("missing " + pre + "attn_output.weight"); }
                     m.anorm.push(f.load(pre + "attn_norm.weight", @ok));
                     if !ok { return Lm::bad("missing " + pre + "attn_norm.weight"); }
-                    m.gate.push(f.load(pre + "ffn_gate.weight", @ok));
+                    m.gate.push(f.load_mat(pre + "ffn_gate.weight", @ok));
                     if !ok { return Lm::bad("missing " + pre + "ffn_gate.weight"); }
-                    m.down.push(f.load(pre + "ffn_down.weight", @ok));
+                    m.down.push(f.load_mat(pre + "ffn_down.weight", @ok));
                     if !ok { return Lm::bad("missing " + pre + "ffn_down.weight"); }
-                    m.up.push(f.load(pre + "ffn_up.weight", @ok));
+                    m.up.push(f.load_mat(pre + "ffn_up.weight", @ok));
                     if !ok { return Lm::bad("missing " + pre + "ffn_up.weight"); }
                     m.fnorm.push(f.load(pre + "ffn_norm.weight", @ok));
                     if !ok { return Lm::bad("missing " + pre + "ffn_norm.weight"); }
