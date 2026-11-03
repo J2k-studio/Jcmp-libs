@@ -1,5 +1,9 @@
 # Jcmp-libs changelog (what changed in the libraries, newest first)
 
+## ui 0.1.0 (2026-11-04)
+* **Added:** `<ui>`: the parts of the screens of an app, in immediate mode, over `<canvas2d>`: `title`, `label`, `button`, `toggle`, `slider`, `cols(n)` / `end_cols`, `spacer`, and a theme (`u.th`). A tap clicks a button when the finger goes down and up inside its box. Text is the 3 x 5 font of `canvas_text` for now (capitals, digits, signs).
+* **Fixed:** none.
+
 ## npu 0.1.0, glapp 0.2.0 (2026-11-03)
 * **Added:** `<npu>`: a layer with fixed weights on the NPU of the phone through NNAPI (`NpuLinear`, `Npu::available`). `<glapp>` 0.2.0: text input for apps of pages: `glapp_on_key(f)` gets every typed character (8 delete, 10 enter) from the soft or a hardware keyboard, `glapp_keyboard(true)` shows the soft keyboard (makej 0.11.0 has the Java side).
 * **Fixed:** none.
