@@ -2,22 +2,22 @@
 # One line for each library:  NAME VERSION URL SHA256
 # The index of libraries for jget (jc lib list | install NAME).
 # The libraries that come with the compiler (cpu, net, math ...) are not listed here: they need no install.
-canvas 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/canvas.j 9f1c7828fe18c6f24b674c8e23c9fbd38bdf3de1920171c7daa28489d3e2976f
+canvas 0.9.188 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/canvas.j 3bb3d5a616c2ae6206c196e247cc1371a3ff8d4193e81b1735fbc92cfc316fec
 canvas2d 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/canvas2d.j 97588a59dba6933cfa80ca1b1556d3b7e3988d67ffe5bfe091b5624a8c2c61ba
 complex 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/complex.j 1aed66c92dda6438f5a94fc0ec0a97a6c1bce850ff276da9bfeea8415cd9df9c
-compute 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/compute.j 0f085f35713b5bbcb2c20be9a958afcd00cb93492b8ef3dde1e33572c80eee60
+compute 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/compute.j 13b0815c746eae12c5158bddea841e2612dfacade7d8d22b7a317c4efa6ba912
 deflate 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/deflate.j e36fe62b33f07892935d52f120c38174dfa95f866947dcf4390a32acbc6d22ac
-discord 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/discord.j 5effdcbfde18c66c7b4545ae790b1183ca0d9f55c1f81fc2736e839553cd0370
+discord 0.2.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/discord.j f919746603868fa5c6bec3f0913941dcc93212278031b624db6d1cb907f76789
 example 1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/example.j abfd04e440dd224b0d681293ef34d26a0c18b610bb412900b6634a88010ed759
-gamej 0.2.2 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gamej.j 95b027d03411710a94eb50ec756ace996ac75dc4f03d305448efbb1599f46b86
-gguf 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gguf.j 281278c34ba2050755be233c84dc8c52b47c873d4d1566c78dc3c22d7dd911a2
+gamej 0.2.3 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gamej.j 478c8593e599ba88e823142e35279e599014c45ffc97fb59353b3ff0febb3c83
+gguf 0.2.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gguf.j b14e72ec91d3a715975ff1a437ddaea9730c561bc84e0fa494b5e0c0e6dd7404
 glapp 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/glapp.j 71b7e0925a28939b03807f61c0e0b5f9624f8915a13a5ec71f58abbbf27f8956
 glcanvas 0.2.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/glcanvas.j b8eab77826eafae8b5861cba6eba773f597895d4c93f22408daaa16704afd44d
-gpu 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gpu.j d2dd662c04381b21f0de3437aefad1c9a9c212c25278cfb2dea78ab095b5d680
+gpu 0.2.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/gpu.j af5c4caa1518bb9ee52ac5302811a6dccfad117c66f77f5478f9dcc239c16621
 jai 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/jai.j 4994fd130a2422b84bc67c853ccae2bd3300ac33e7fd62a3e1d48a528b4a29e4
 jobs 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/jobs.j f4ecdad5c02fc5f8b5aa0ac29e2e8dffd91d3392fbc7e07fda7eafb15b571c18
-llama 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/llama.j f36cf2b8712fdd7ed2d75426d11d6dca367f3479a09a65c4ad819155183e7311
-mlp 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/mlp.j 711dc1b040d930a657145f6e98b223efab56e8d165ade293c0ac2f58bc38d655
+llama 0.2.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/llama.j 64234e2f9f34321f7a534c55382888d56a8b9609750949a5ddcef86276f5c2b5
+mlp 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/mlp.j 4e1fc72aae49dac97b9b1b863d5f4238bf9853a67381edee9948e4734e1d2aa0
 native 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/native.j 89be83affdd06e4e051e8a6eceb4f52a6d182d69f74204bd3c5742c72c127893
 neuron 0.7.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neuron.j 63ec604a38a8da5ebd8cdad786e6bdeaa60aa8c992694b4ad3cfbeeec978f99f
 neurongpu 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/neurongpu.j ad3f617ceee7e2fe8104e3d3af7a217bfc365c7b1885d46b1dd5cfc759cdb3a5
@@ -25,11 +25,11 @@ npu 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/npu.j
 opengl3 0.3.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/opengl3.j ff1da5104c3962b559e947304b785a1e66978d94f3a9b61576c80c6d7a6eace1
 phys2d 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/phys2d.j aabde720965677fb2d4204e734803fc8c9dec60b4195224855aa441da191b576
 png 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/png.j 62c381b6bcfb63c684fbdb1e4bbcd6572313348c66ec14de3018e84291f4fac1
-profile 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/profile.j 3e783a5b599a804fb14b8ba11faffc79ca0426cf8aea072cafcd05c6372690ef
+profile 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/profile.j 865c8f37f7bc9fad661cbe92fac9d2c252fbfe3e2662dad1cc8f3798a88e9401
 qr 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/qr.j 47de3e69e2287180ebbd87d0da3da1bc3b0b7a6bce0521584e77560a5a8b11d2
 quat 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/quat.j 206a72aa0c03abe51cf9759d924428508114b80642a4508985fbfc7096808346
-retrieve 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/retrieve.j 16ce87b909315d49629752642abe0055ca07ec384970caa74bbce2efdab1f948
-screen 0.9.187 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/screen.j 57a6952d194043692a122a47a59175099e611159afb771ed3371d0b7f7b3ea3c
+retrieve 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/retrieve.j fdf85d39474ec2d46db785480d30680bc752a1a3aa67d2bd1b6b427bc1f9147c
+screen 0.9.188 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/screen.j 8957c94d5cfdb1c153b16b448fae29456afe9923a60d1ede59141c63d2f92b14
 shaders 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/shaders.j 32782ead6ded2f872b5b34bd8e5d7d8e6bccef70635813411e2e607ad9438e2e
 simd 0.10.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/simd.j 7a3bf58ee9fdd23b63bf085dfe0bd7b7480376bac14abbb3f08dff0463574045
 sprite 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/sprite.j e74c1a13a720cd68cd9a0f34042f5cf6a12e75c0996455c1d0a4b2def293a29f
@@ -39,6 +39,6 @@ tasks 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/tas
 telegram 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/telegram.j 31307b6217ce4d9113d3bc54ae00e4403e4e25b219f69a1c1d65522c0a8a0d06
 tilemap 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/tilemap.j 7c8f9cb88b34f11cc69f9ce0752a37ff6bcdb8599a2fceb825107cfacf8b46a5
 ui 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/ui.j 2f72009889413025d48f12fe9efab8761d8540448e3bb74420168485cd7e3dee
-vulkan 0.3.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/vulkan.j 8e193131131b45555c9eabf21d8f666e155c6e44462317d72dbc60932bf9e00c
-web 0.1.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/web.j 5b3c2969f5da08a07e5464240fefb5c74757a13fdad903a8b555bc667bcf1c55
+vulkan 0.3.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/vulkan.j 5e2f05bdeaf4dc36fb1d3d48e261cdb8b02132ac42c8282557c224c715f4f47c
+web 0.1.1 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/web.j 20f051f22d7d3eafe5bc99bd081d70153cb2735cb3994f0101fa424eb9185221
 websocket 0.2.0 https://raw.githubusercontent.com/J2k-studio/Jcmp-libs/main/libs/websocket.j b0cc2f0e4dfe0626c015753e3ddf758fbc19a475d259fe4c20a24ce80ea63e62
