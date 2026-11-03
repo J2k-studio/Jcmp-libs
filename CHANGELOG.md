@@ -1,5 +1,9 @@
 # Jcmp-libs changelog (what changed in the libraries, newest first)
 
+## npu 0.1.0, glapp 0.2.0 (2026-11-03)
+* **Added:** `<npu>`: a layer with fixed weights on the NPU of the phone through NNAPI (`NpuLinear`, `Npu::available`). `<glapp>` 0.2.0: text input for apps of pages: `glapp_on_key(f)` gets every typed character (8 delete, 10 enter) from the soft or a hardware keyboard, `glapp_keyboard(true)` shows the soft keyboard (makej 0.11.0 has the Java side).
+* **Fixed:** none.
+
 ## mlp 0.1.0, vulkan 0.3.0 (2026-10-30)
 * **Added:** `<mlp>`: a network in a few lines on top of `neuron` (`Mlp::make(sizes, activation, seed)`, `fit` for numbers, `fit_classes` for classes, `predict`, `accuracy`, `loss_on`, `save` / `load`; fields `batch`, `decay`, `clip`, `every`, `cosine`). `<vulkan>` 0.3.0: a logical device and queue, buffers shared by the CPU and the GPU, a compute pipeline from SPIR-V words, `VkShaders::vector_add()`, the names of the `VkResult`s.
 * **Fixed:** none.
