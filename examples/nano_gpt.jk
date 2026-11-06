@@ -9,22 +9,22 @@ Linear wo;
 Linear up;
 Linear down;
 Linear head;
-int emb;
-int pos;
-int gain1;
-int gain2;
-int gain3;
+i64 emb;
+i64 pos;
+i64 gain1;
+i64 gain2;
+i64 gain3;
 
 // the logits (one row per position) for the token numbers in ids
-int forward(int[] ids) {
-    int t = ids.len;
-    int[] pids = arr(t);
+i64 forward(i64[] ids) {
+    i64 t = ids.len;
+    i64[] pids = arr(t);
     for i in 0..t { pids.push(i); }
-    int x = g.add(g.embed(emb, ids), g.embed(pos, pids));
-    int n1 = g.rms_norm(x, gain1);
-    int att = g.attention(g.apply(wq, n1), g.apply(wk, n1), g.apply(wv, n1), 2);
+    i64 x = g.add(g.embed(emb, ids), g.embed(pos, pids));
+    i64 n1 = g.rms_norm(x, gain1);
+    i64 att = g.attention(g.apply(wq, n1), g.apply(wk, n1), g.apply(wv, n1), 2);
     x = g.add(x, g.apply(wo, att));
-    int n2 = g.rms_norm(x, gain2);
+    i64 n2 = g.rms_norm(x, gain2);
     x = g.add(x, g.apply(down, g.gelu(g.apply(up, n2))));
     return g.apply(head, g.rms_norm(x, gain3));
 }
@@ -36,12 +36,12 @@ void main() {
     // the vocabulary: the characters of the text
     String chars = "";
     for i in 0..text.len { if !chars.contains(text.slice(i, i + 1)) { chars = chars + text.slice(i, i + 1); } }
-    int v = chars.len;
-    int[] tok = arr(all.len + 1);
+    i64 v = chars.len;
+    i64[] tok = arr(all.len + 1);
     for i in 0..all.len { tok.push(chars.find(all.slice(i, i + 1))); }
 
-    int d = 32;
-    int ctx = 16;
+    i64 d = 32;
+    i64 ctx = 16;
     g = Graph::make();
     emb = g.param(Tensor32::random(v, d, 1, 0.3));
     pos = g.param(Tensor32::random(ctx, d, 2, 0.3));
@@ -61,13 +61,13 @@ void main() {
 
     double first = 0.0;
     double last = 0.0;
-    int steps = 500;
+    i64 steps = 500;
     for step in 0..steps {
-        int start = (step * 7) % (tok.len - ctx - 1);
-        int[] inp = arr(ctx);
-        int[] want = arr(ctx);
+        i64 start = (step * 7) % (tok.len - ctx - 1);
+        i64[] inp = arr(ctx);
+        i64[] want = arr(ctx);
         for i in 0..ctx { inp.push(tok[start + i]); want.push(tok[start + i + 1]); }
-        int loss = g.softmax_ce(forward(inp), want);
+        i64 loss = g.softmax_ce(forward(inp), want);
         if step == 0 { first = (double)g.value(loss).d[0]; }
         last = (double)g.value(loss).d[0];
         g.backward(loss);
@@ -80,14 +80,14 @@ void main() {
     // greedy writing: start with "the c" and add the most likely next character, 30 times
     String made = "the c";
     for k in 0..30 {
-        int[] inp = arr(ctx);
-        int from = made.len - ctx;
+        i64[] inp = arr(ctx);
+        i64 from = made.len - ctx;
         if from < 0 { from = 0; }
         for i in from..made.len { inp.push(chars.find(made.slice(i, i + 1))); }
         Tensor32 sc = g.value(forward(inp));
         g.clear();
-        int row = inp.len - 1;
-        int best = 0;
+        i64 row = inp.len - 1;
+        i64 best = 0;
         for c in 1..v { if sc.d[row * v + c] > sc.d[row * v + best] { best = c; } }
         made = made + chars.slice(best, best + 1);
     }

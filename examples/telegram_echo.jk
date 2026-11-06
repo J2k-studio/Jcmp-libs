@@ -6,7 +6,7 @@ void main() {
     String[] a = Env::args();
     if a.len < 2 { cout << "usage: echo TOKEN\n"; return; }
     Telegram bot = Telegram::bot(a[1]);
-    int next = 0;
+    i64 next = 0;
     cout << "the bot is running (stop it with Ctrl-C)\n";
     while true {
         switch bot.poll(next, 25) {

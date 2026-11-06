@@ -1,12 +1,12 @@
 #import <stdlib>
 #import <opengl3>
-int main() {
+i64 main() {
     Gl gl = Gl::open(64, 64, 3, 1);
     if !gl.ok { cout << "no GL: " << gl.log << "\n"; return 1; }
     cout << "renderer " << gl.renderer << "\n";
     String vs = "#version 300 es\nlayout(location = 0) in vec2 pos;\nvoid main() { gl_Position = vec4(pos, 0.0, 1.0); }\n";
     String fs = "#version 300 es\nprecision mediump float;\nout vec4 color;\nvoid main() { color = vec4(1.0, 0.5, 0.0, 1.0); }\n";
-    int prog = gl.program(vs, fs);
+    i64 prog = gl.program(vs, fs);
     if prog == 0 { cout << "shader: " << gl.log << "\n"; return 1; }
     gl.clear_color(0.0, 0.0, 0.0, 1.0);
     gl.clear_color_buffer();

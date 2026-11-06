@@ -9,6 +9,6 @@ String example_greeting(String who) {
     return "hello, " + who;
 }
 
-int example_twice(int x) {
+i64 example_twice(i64 x) {
     return x * 2;
 }
